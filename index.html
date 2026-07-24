@@ -395,10 +395,10 @@
                         <h4 style="margin-bottom:14px;">Visit History</h4>
                         <table>
                             <thead>
-                                <tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Prescription</th><th>Follow-up</th></tr>
+                                <tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Prescription</th><th>Follow-up</th><th></th></tr>
                             </thead>
                             <tbody id="visitHistoryList">
-                                <tr><td colspan="5" class="empty-state">No visits yet</td></tr>
+                                <tr><td colspan="6" class="empty-state">No visits yet</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -434,7 +434,7 @@
                         </div>
                         <div>
                             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Date *</label>
-                            <input id="apptDate" type="date">
+                            <input id="apptDate" type="date" onchange="refreshTokenForDate()">
                         </div>
                         <div>
                             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Time *</label>
@@ -717,8 +717,32 @@
 
     async function showAddAppointmentForm() {
         document.getElementById('addAppointmentForm').style.display = 'block';
-        document.getElementById('apptDate').value = todayStr();
+        const today = todayStr();
+        document.getElementById('apptDate').value = today;
         await populateAppointmentDropdowns();
+
+        // Auto-fetch the next token number for today via generate_token_number()
+        // (a DB function - see schema.sql). Restarts from 1 each day since the
+        // function only looks at rows matching today's appointment_date.
+        // Receptionist can still overwrite this manually if needed.
+        const { data, error } = await supabaseClient.rpc('generate_token_number', {
+            p_clinic_id: CURRENT_CLINIC_ID,
+            p_date: today
+        });
+        document.getElementById('apptToken').value = error ? '' : data;
+    }
+
+    // Re-fetches the correct next token number whenever the appointment
+    // date changes - otherwise a token fetched for "today" would stay
+    // stale if the receptionist switches to booking for tomorrow instead.
+    async function refreshTokenForDate() {
+        const selectedDate = document.getElementById('apptDate').value;
+        if (!selectedDate) return;
+        const { data, error } = await supabaseClient.rpc('generate_token_number', {
+            p_clinic_id: CURRENT_CLINIC_ID,
+            p_date: selectedDate
+        });
+        document.getElementById('apptToken').value = error ? '' : data;
     }
 
     function hideAddAppointmentForm() {
@@ -891,8 +915,68 @@
                 <td>${v.diagnosis || '-'}</td>
                 <td>${v.prescription || '-'}</td>
                 <td>${v.follow_up_date || '-'}</td>
+                <td><button class="btn btn-secondary" style="padding:6px 12px; font-size:12.5px;" onclick='printPrescription(${JSON.stringify(v).replace(/'/g, "&#39;")})'><i class="fas fa-print"></i> Print</button></td>
             </tr>
         `).join('');
+    }
+
+    // Opens a clean, print-formatted prescription slip in a new window and
+    // triggers the browser's native print dialog - no PDF library needed,
+    // works offline, completely free. The receptionist/doctor can "Save as
+    // PDF" from that same print dialog if a digital copy is wanted instead
+    // of paper.
+    function printPrescription(visit) {
+        const patient = allPatients.find(p => p.id === currentDetailPatientId);
+        const win = window.open('', '_blank', 'width=650,height=800');
+        win.document.write(`
+            <html>
+            <head>
+                <title>Prescription - ${patient?.full_name || ''}</title>
+                <style>
+                    body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #134e4a; }
+                    .header { text-align: center; border-bottom: 3px solid #0d9488; padding-bottom: 16px; margin-bottom: 24px; }
+                    .header h1 { color: #0d9488; font-size: 22px; }
+                    .row { display: flex; justify-content: space-between; margin-bottom: 14px; font-size: 14px; }
+                    .section { margin-bottom: 20px; }
+                    .section h3 { font-size: 12px; text-transform: uppercase; color: #5f8a86; margin-bottom: 6px; }
+                    .section p { font-size: 16px; white-space: pre-wrap; }
+                    .footer { margin-top: 60px; display: flex; justify-content: space-between; font-size: 13px; color: #5f8a86; }
+                    @media print { .no-print { display: none; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${document.getElementById('sidebarClinicName').textContent} ${document.getElementById('sidebarClinicSubtitle').textContent}</h1>
+                    <p style="font-size:12px; color:#5f8a86;">Prescription Slip</p>
+                </div>
+                <div class="row">
+                    <span><strong>Patient:</strong> ${patient?.full_name || ''} (${patient?.patient_code || ''})</span>
+                    <span><strong>Date:</strong> ${visit.visit_date}</span>
+                </div>
+                <div class="row">
+                    <span><strong>Age/Gender:</strong> ${patient?.age || 'N/A'} / ${patient?.gender || 'N/A'}</span>
+                    <span><strong>Doctor:</strong> ${visit.staff?.full_name || 'N/A'}</span>
+                </div>
+                <div class="section">
+                    <h3>Diagnosis</h3>
+                    <p>${visit.diagnosis || 'Not recorded'}</p>
+                </div>
+                <div class="section">
+                    <h3>Prescription (Rx)</h3>
+                    <p>${visit.prescription || 'Not recorded'}</p>
+                </div>
+                ${visit.follow_up_date ? `<div class="section"><h3>Follow-up Date</h3><p>${visit.follow_up_date}</p></div>` : ''}
+                <div class="footer">
+                    <span>Generated by Clinic ERP</span>
+                    <span>Doctor's Signature: ___________________</span>
+                </div>
+                <div class="no-print" style="text-align:center; margin-top:30px;">
+                    <button onclick="window.print()" style="padding:10px 24px; background:#0d9488; color:white; border:none; border-radius:8px; font-size:14px; cursor:pointer;">Print / Save as PDF</button>
+                </div>
+            </body>
+            </html>
+        `);
+        win.document.close();
     }
 
     // Saves a new visit for whichever patient is currently open. Diagnosis
