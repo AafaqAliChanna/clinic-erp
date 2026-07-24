@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageDocTitle">Clinic ERP</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ============================================================
+           CLINIC UI THEME - deliberately different from Nizamix (school)
+           colors: teal/medical instead of blue/school, so this reads as
+           its own professional product, not a reskin.
+           ============================================================ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #0d9488;      /* teal - medical, calm, professional */
+            --primary-dark: #0f766e;
+            --secondary: #06b6d4;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --bg-light: #f0fdfa;
+            --card-bg: #ffffff;
+            --border-color: #d1fae5;
+            --text-dark: #134e4a;
+            --text-light: #5f8a86;
+            --sidebar-width: 270px;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* ---------------- LOGIN PAGE ---------------- */
+        .login-container {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container.show { display: flex; }
+
+        .login-box {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+        }
+        .login-header { text-align: center; margin-bottom: 28px; }
+        .login-logo {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; color: white; margin: 0 auto 14px;
+        }
+        .login-header h2 { font-size: 22px; font-weight: 700; color: var(--text-dark); }
+        .login-header p { color: var(--text-light); font-size: 13px; margin-top: 4px; }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 11px; border: 1px solid var(--border-color);
+            border-radius: 8px; font-size: 14px; font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+        }
+
+        .btn-full {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+        .btn-full:hover { transform: translateY(-1px); }
+
+        .login-message { font-size: 13px; margin-top: 10px; text-align: center; }
+        .login-message.error { color: var(--danger); }
+        .login-message.success { color: var(--success); }
+
+        /* ---------------- APP LAYOUT ---------------- */
+        .app-container { display: none; height: 100vh; }
+        .app-container.show { display: flex; }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; padding: 22px; position: fixed; height: 100vh; left: 0; top: 0;
+            overflow-y: auto;
+        }
+        .clinic-logo { display: flex; align-items: center; margin-bottom: 26px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .clinic-logo-icon {
+            width: 42px; height: 42px; background: rgba(255,255,255,0.2); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 12px;
+        }
+        .clinic-info h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.3px; }
+        .clinic-info p { font-size: 11px; opacity: 0.85; }
+
+        .nav-menu { list-style: none; margin-bottom: 24px; }
+        .nav-item { margin-bottom: 6px; }
+        .nav-link {
+            display: flex; align-items: center; width: 100%; padding: 11px 14px;
+            color: rgba(255,255,255,0.85); border: none; background: none; border-radius: 8px;
+            font-size: 14px; font-weight: 500; cursor: pointer; text-align: left;
+        }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.15); color: white; }
+        .nav-link i { width: 20px; margin-right: 10px; text-align: center; }
+
+        .logout-btn {
+            width: 100%; padding: 11px; background: rgba(220,38,38,0.2); color: #fca5a5;
+            border: 1px solid rgba(220,38,38,0.3); border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; font-size: 14px;
+        }
+
+        .main-content { margin-left: var(--sidebar-width); flex: 1; overflow-y: auto; }
+        .header {
+            background: var(--card-bg); padding: 18px 30px; display: flex;
+            justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .header h2 { font-size: 22px; font-weight: 700; }
+        .user-badge { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--bg-light); border-radius: 8px; }
+        .user-avatar {
+            width: 34px; height: 34px; background: var(--secondary); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px;
+        }
+
+        .content { padding: 28px; }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .card {
+            background: var(--card-bg); border-radius: 12px; padding: 22px;
+            border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04);
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: var(--bg-light); padding: 13px 15px; text-align: left; font-weight: 600;
+            font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;
+            color: var(--text-dark); border-bottom: 2px solid var(--border-color);
+        }
+        td { padding: 13px 15px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        tr:hover td { background-color: var(--bg-light); }
+
+        .empty-state { text-align: center; color: var(--text-light); padding: 36px 20px; font-style: italic; }
+
+        .patient-code-badge {
+            background: #ccfbf1; color: var(--primary-dark); padding: 4px 10px;
+            border-radius: 6px; font-size: 12.5px; font-weight: 700; font-family: monospace;
+        }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px;
+            border-radius: 8px; font-size: 14px; font-weight: 600; border: none; cursor: pointer;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: var(--bg-light); color: var(--text-dark); border: 1px solid var(--border-color); }
+
+        .form-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px; margin-bottom: 16px;
+        }
+        .form-row input, .form-row select {
+            width: 100%; padding: 10px 13px; border: 1px solid var(--border-color);
+            border-radius: 7px; font-size: 14px; font-family: inherit;
+        }
+        .form-row input:focus, .form-row select:focus {
+            outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+        }
+
+        .search-bar { margin-bottom: 20px; }
+        .search-bar input {
+            width: 100%; padding: 12px 16px; border: 1px solid var(--border-color);
+            border-radius: 9px; font-size: 14px;
+        }
+
+        .code-preview {
+            font-family: monospace; font-size: 13px; color: var(--text-light);
+            padding: 8px 0; grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===================== LOGIN PAGE ===================== -->
+<!-- Generic until login succeeds - the clinic's real name isn't known
+     to the page until we look up the logged-in staff member's clinic_id. -->
+<div class="login-container show" id="loginContainer">
+    <div class="login-box">
+        <div class="login-header">
+            <div class="login-logo"><i class="fas fa-briefcase-medical"></i></div>
+            <h2>Clinic ERP</h2>
+            <p>Sign in to your clinic account</p>
+        </div>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input id="loginEmail" type="email" required placeholder="you@clinic.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input id="loginPassword" type="password" required placeholder="Password">
+            </div>
+            <button type="submit" class="btn-full"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+            <div id="loginMessage" class="login-message"></div>
+        </form>
+    </div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div class="app-container" id="appContainer">
+    <aside class="sidebar">
+        <div class="clinic-logo">
+            <div class="clinic-logo-icon"><i class="fas fa-briefcase-medical"></i></div>
+            <!-- Filled by setClinicBranding() after login, from the clinics table -->
+            <div class="clinic-info">
+                <h1 id="sidebarClinicName">Clinic</h1>
+                <p id="sidebarClinicSubtitle">Management System</p>
+            </div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <button class="nav-link active" onclick="showPage('dashboard')">
+                    <i class="fas fa-gauge"></i><span>Dashboard</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" onclick="showPage('patients')">
+                    <i class="fas fa-user-injured"></i><span>Patients</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" onclick="showPage('appointments')">
+                    <i class="fas fa-calendar-check"></i><span>Today's Queue</span>
+                </button>
+            </li>
+        </ul>
+
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+        </button>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h2 id="pageTitle">Dashboard</h2>
+            <div class="user-badge">
+                <div class="user-avatar" id="userInitial">S</div>
+                <div>
+                    <strong style="display:block; font-size:13px;" id="userName">Staff</strong>
+                    <small style="color: var(--text-light);" id="userRole">Clinic Staff</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- ---------------- DASHBOARD ---------------- -->
+            <div class="page active" id="dashboard">
+                <div style="margin-bottom: 26px;">
+                    <h2 style="margin-bottom: 4px;">Dashboard</h2>
+                    <p style="color: var(--text-light);" id="dashboardWelcome">Welcome</p>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:20px;">
+                    <div class="card">
+                        <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Total Patients</h4>
+                        <p style="font-size:30px; font-weight:700; color:var(--primary);" id="totalPatients">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ---------------- PATIENTS ---------------- -->
+            <div class="page" id="patients">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h2 style="margin-bottom:4px;">Patient Registry</h2>
+                        <p style="color: var(--text-light);">Search by name or patient ID</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAddPatientForm()">
+                        <i class="fas fa-user-plus"></i> Register New Patient
+                    </button>
+                </div>
+
+                <!-- Add Patient form: hidden until "Register New Patient" is clicked.
+                     Patient ID field is pre-filled by generate_patient_code() (a
+                     database function - see schema.sql) but the receptionist can
+                     type over it, matching "auto by default, manual override allowed". -->
+                <div id="addPatientForm" class="card" style="display:none; margin-bottom:22px;">
+                    <div class="form-row">
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Patient ID</label>
+                            <input id="patientCode" placeholder="Auto-generating...">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Full Name *</label>
+                            <input id="patientName" placeholder="Full name">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Phone</label>
+                            <input id="patientPhone" placeholder="03xx-xxxxxxx">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Age</label>
+                            <input id="patientAge" type="number" placeholder="Age">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Gender</label>
+                            <select id="patientGender">
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Address</label>
+                            <input id="patientAddress" placeholder="Address (optional)">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="handleAddPatient()"><i class="fas fa-check"></i> Save Patient</button>
+                        <button class="btn btn-secondary" onclick="hideAddPatientForm()">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="search-bar">
+                    <input id="patientSearch" placeholder="Search by name or patient ID (e.g. P-2026-001)..." oninput="filterPatients()">
+                </div>
+
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Patient ID</th><th>Full Name</th><th>Phone</th><th>Age</th><th>Gender</th><th>Registered</th></tr>
+                        </thead>
+                        <tbody id="patientsList">
+                            <tr><td colspan="6" class="empty-state">Loading patients...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ---------------- TODAY'S QUEUE / APPOINTMENTS ---------------- -->
+            <div class="page" id="appointments">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h2 style="margin-bottom:4px;">Today's Queue</h2>
+                        <p style="color: var(--text-light);" id="queueDateLabel">Today's appointments</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAddAppointmentForm()">
+                        <i class="fas fa-plus"></i> Add Appointment
+                    </button>
+                </div>
+
+                <!-- Add Appointment form. Patient dropdown is filled from the same
+                     allPatients cache used by search - no extra query needed.
+                     Doctor dropdown filled from staff where role = 'Doctor'.
+                     Token number auto-fills to "next number today" but can be
+                     left blank if this clinic doesn't use tokens. -->
+                <div id="addAppointmentForm" class="card" style="display:none; margin-bottom:22px;">
+                    <div class="form-row">
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Patient *</label>
+                            <select id="apptPatient"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Doctor *</label>
+                            <select id="apptDoctor"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Date *</label>
+                            <input id="apptDate" type="date">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Time *</label>
+                            <input id="apptTime" type="time">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Token # (optional)</label>
+                            <input id="apptToken" type="number" placeholder="e.g. 7">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Notes</label>
+                            <input id="apptNotes" placeholder="Reason for visit (optional)">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="handleAddAppointment()"><i class="fas fa-check"></i> Save Appointment</button>
+                        <button class="btn btn-secondary" onclick="hideAddAppointmentForm()">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr><th>Token</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody id="queueList">
+                            <tr><td colspan="6" class="empty-state">Loading today's queue...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // ============================================================
+    // PASTE YOUR CLINIC-ERP SUPABASE PROJECT URL + ANON KEY BELOW.
+    // Get these from: Supabase dashboard -> your clinic-erp project
+    // -> Project Settings -> API -> "Project URL" and "anon public" key.
+    // This is a SEPARATE Supabase project from Nizamix - do not reuse
+    // Nizamix's URL/key here, they must point to the clinic database.
+    // ============================================================
+  const supabaseClient = window.supabase.createClient(
+    'https://rbgcyrlaoygugizuxste.supabase.co',
+    'sb_publishable_R7qmvPIOIkWN0lu-oUDc8g_OBcVo59X',
+);
+
+    // Resolved after login from the logged-in user's own staff row -
+    // never hardcoded, so this same file works for a second clinic later
+    // with zero code changes (same fix as Nizamix's school_id lesson).
+    let CURRENT_CLINIC_ID = null;
+    let allPatients = []; // cached full list, used for instant client-side search
+
+    // Looks up which clinic the logged-in user belongs to, then loads
+    // that clinic's real name and writes it into the sidebar/header/dashboard.
+    async function resolveClinicContext() {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return false;
+
+        const { data: staffRow, error: staffError } = await supabaseClient
+            .from('staff')
+            .select('clinic_id, full_name, role')
+            .eq('id', user.id)
+            .single();
+
+        if (staffError || !staffRow) {
+            alert('Your account is not linked to a clinic yet. Contact your administrator.');
+            await supabaseClient.auth.signOut();
+            showLogin();
+            return false;
+        }
+
+        CURRENT_CLINIC_ID = staffRow.clinic_id;
+        document.getElementById('userName').textContent = staffRow.full_name || 'Staff';
+        document.getElementById('userRole').textContent = staffRow.role || 'Clinic Staff';
+        document.getElementById('userInitial').textContent = (staffRow.full_name || 'S').charAt(0).toUpperCase();
+
+        const { data: clinicRow } = await supabaseClient
+            .from('clinics')
+            .select('name')
+            .eq('id', CURRENT_CLINIC_ID)
+            .single();
+
+        setClinicBranding(clinicRow?.name || 'Clinic');
+        return true;
+    }
+
+    // Writes the real clinic name into sidebar, dashboard, and tab title.
+    function setClinicBranding(clinicName) {
+        const parts = clinicName.trim().split(' ');
+        document.getElementById('sidebarClinicName').textContent = parts[0] || 'Clinic';
+        document.getElementById('sidebarClinicSubtitle').textContent = parts.slice(1).join(' ') || 'Management System';
+        document.getElementById('dashboardWelcome').textContent = `Welcome to ${clinicName}`;
+        document.getElementById('pageDocTitle').textContent = `${clinicName} - Clinic ERP`;
+    }
+
+    async function checkSession() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            const ok = await resolveClinicContext();
+            if (!ok) return;
+            showApp();
+            await loadData();
+        } else {
+            showLogin();
+        }
+    }
+
+    async function handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            document.getElementById('loginMessage').className = 'login-message error';
+            document.getElementById('loginMessage').textContent = error.message;
+            return;
+        }
+        if (data?.session) {
+            const ok = await resolveClinicContext();
+            if (!ok) return;
+            showApp();
+            await loadData();
+        }
+    }
+
+    async function handleLogout() {
+        await supabaseClient.auth.signOut();
+        CURRENT_CLINIC_ID = null;
+        showLogin();
+    }
+
+    function showLogin() {
+        document.getElementById('loginContainer').classList.add('show');
+        document.getElementById('appContainer').classList.remove('show');
+    }
+    function showApp() {
+        document.getElementById('loginContainer').classList.remove('show');
+        document.getElementById('appContainer').classList.add('show');
+    }
+
+    async function loadData() {
+        await loadPatients();
+        await populateAppointmentDropdowns();
+        await loadQueue();
+    }
+
+    // Loads every patient for this clinic and renders the table.
+    // Also caches the list in allPatients so search filtering is instant
+    // (no new database query on every keystroke).
+    async function loadPatients() {
+        const { data, error } = await supabaseClient
+            .from('patients')
+            .select('*')
+            .eq('clinic_id', CURRENT_CLINIC_ID)
+            .order('registered_at', { ascending: false });
+
+        if (error) {
+            document.getElementById('patientsList').innerHTML =
+                `<tr><td colspan="6" class="empty-state" style="color:#dc2626;">Error: ${error.message}</td></tr>`;
+            return;
+        }
+
+        allPatients = data || [];
+        document.getElementById('totalPatients').textContent = allPatients.length;
+        renderPatientsTable(allPatients);
+    }
+
+    function renderPatientsTable(list) {
+        const tbody = document.getElementById('patientsList');
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No patients found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = list.map(p => `
+            <tr>
+                <td><span class="patient-code-badge">${p.patient_code}</span></td>
+                <td style="font-weight:500;">${p.full_name}</td>
+                <td>${p.phone || 'N/A'}</td>
+                <td>${p.age ?? 'N/A'}</td>
+                <td>${p.gender || 'N/A'}</td>
+                <td style="color:var(--text-light); font-size:13px;">${new Date(p.registered_at).toLocaleDateString()}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Client-side filter over the cached list - matches on name OR patient
+    // code, case-insensitive. This is what handles "search by name, and if
+    // there's a name collision, search by patient ID instead".
+    function filterPatients() {
+        const q = document.getElementById('patientSearch').value.trim().toLowerCase();
+        if (!q) { renderPatientsTable(allPatients); return; }
+        const filtered = allPatients.filter(p =>
+            p.full_name.toLowerCase().includes(q) ||
+            p.patient_code.toLowerCase().includes(q)
+        );
+        renderPatientsTable(filtered);
+    }
+
+    // Shows the Add Patient form AND immediately asks the database for the
+    // next auto ID (via generate_patient_code, defined in schema.sql), so
+    // the receptionist sees "P-2026-004" pre-filled before typing anything -
+    // they can overwrite it manually if the clinic wants a custom ID instead.
+    async function showAddPatientForm() {
+        document.getElementById('addPatientForm').style.display = 'block';
+        const { data, error } = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
+        document.getElementById('patientCode').value = error ? '' : data;
+        document.getElementById('patientName').focus();
+    }
+
+    function hideAddPatientForm() {
+        document.getElementById('addPatientForm').style.display = 'none';
+        ['patientCode','patientName','patientPhone','patientAge','patientGender','patientAddress']
+            .forEach(id => document.getElementById(id).value = '');
+    }
+
+    async function handleAddPatient() {
+        const code = document.getElementById('patientCode').value.trim();
+        const name = document.getElementById('patientName').value.trim();
+
+        if (!code || !name) {
+            alert('Patient ID and Full Name are required.');
+            return;
+        }
+
+        const { error } = await supabaseClient.from('patients').insert({
+            clinic_id: CURRENT_CLINIC_ID,
+            patient_code: code,
+            full_name: name,
+            phone: document.getElementById('patientPhone').value.trim() || null,
+            age: document.getElementById('patientAge').value || null,
+            gender: document.getElementById('patientGender').value || null,
+            address: document.getElementById('patientAddress').value.trim() || null
+        });
+
+        if (error) {
+            // unique(clinic_id, patient_code) is what throws here if someone
+            // manually types an ID that's already taken.
+            if (error.message.includes('patients_clinic_id_patient_code_key')) {
+                alert('That Patient ID is already in use. Choose a different one.');
+            } else {
+                alert('Error saving patient: ' + error.message);
+            }
+            return;
+        }
+
+        hideAddPatientForm();
+        await loadPatients();
+    }
+
+    function todayStr() {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    // Fills the Patient and Doctor dropdowns in the Add Appointment form.
+    // Patients come from the already-loaded allPatients cache (no extra
+    // query). Doctors are staff filtered to role = 'Doctor' - this is what
+    // makes "add more doctors later" work with zero schema changes: just
+    // create more staff rows with role='Doctor', they show up here automatically.
+    let staffCache = [];
+    async function populateAppointmentDropdowns() {
+        document.getElementById('apptPatient').innerHTML = allPatients
+            .map(p => `<option value="${p.id}">${p.full_name} (${p.patient_code})</option>`).join('');
+
+        const { data, error } = await supabaseClient
+            .from('staff')
+            .select('id, full_name, role')
+            .eq('clinic_id', CURRENT_CLINIC_ID);
+
+        if (error) { console.error('Failed to load staff:', error); return; }
+        staffCache = data || [];
+        const doctors = staffCache.filter(s => s.role === 'Doctor');
+        document.getElementById('apptDoctor').innerHTML =
+            (doctors.length ? doctors : staffCache)
+            .map(s => `<option value="${s.id}">${s.full_name}${s.role ? ' - ' + s.role : ''}</option>`).join('');
+    }
+
+    async function showAddAppointmentForm() {
+        document.getElementById('addAppointmentForm').style.display = 'block';
+        document.getElementById('apptDate').value = todayStr();
+        await populateAppointmentDropdowns();
+    }
+
+    function hideAddAppointmentForm() {
+        document.getElementById('addAppointmentForm').style.display = 'none';
+        ['apptToken','apptNotes'].forEach(id => document.getElementById(id).value = '');
+    }
+
+    async function handleAddAppointment() {
+        const patientId = document.getElementById('apptPatient').value;
+        const doctorId = document.getElementById('apptDoctor').value;
+        const date = document.getElementById('apptDate').value;
+        const time = document.getElementById('apptTime').value;
+
+        if (!patientId || !doctorId || !date || !time) {
+            alert('Patient, Doctor, Date, and Time are required.');
+            return;
+        }
+
+        const tokenVal = document.getElementById('apptToken').value;
+        const { error } = await supabaseClient.from('appointments').insert({
+            clinic_id: CURRENT_CLINIC_ID,
+            patient_id: patientId,
+            doctor_id: doctorId,
+            appointment_date: date,
+            appointment_time: time,
+            token_number: tokenVal ? parseInt(tokenVal) : null,
+            notes: document.getElementById('apptNotes').value.trim() || null,
+            status: 'scheduled'
+        });
+
+        if (error) {
+            alert('Error saving appointment: ' + error.message);
+            return;
+        }
+
+        hideAddAppointmentForm();
+        await loadQueue();
+    }
+
+    // Loads TODAY's appointments only (appointment_date = today), joined
+    // with patient name and doctor name via foreign keys, ordered by token
+    // number first (if used), then by time - matches how a real walk-in
+    // queue is read off a clinic's whiteboard.
+    async function loadQueue() {
+        const { data, error } = await supabaseClient
+            .from('appointments')
+            .select('id, appointment_time, token_number, status, patients(full_name, patient_code), staff(full_name)')
+            .eq('clinic_id', CURRENT_CLINIC_ID)
+            .eq('appointment_date', todayStr())
+            .order('token_number', { ascending: true, nullsFirst: false })
+            .order('appointment_time', { ascending: true });
+
+        if (error) {
+            document.getElementById('queueList').innerHTML =
+                `<tr><td colspan="6" class="empty-state" style="color:#dc2626;">Error: ${error.message}</td></tr>`;
+            return;
+        }
+
+        const queue = data || [];
+        document.getElementById('queueDateLabel').textContent =
+            `${queue.length} appointment(s) - ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+
+        if (queue.length === 0) {
+            document.getElementById('queueList').innerHTML = '<tr><td colspan="6" class="empty-state">No appointments today</td></tr>';
+            return;
+        }
+
+        const statusColors = {
+            scheduled: '#e0f2fe', waiting: '#fef3c7', in_progress: '#dbeafe',
+            completed: '#dcfce7', cancelled: '#fee2e2', no_show: '#fee2e2'
+        };
+        const statusText = {
+            scheduled: '#0369a1', waiting: '#92400e', in_progress: '#1e40af',
+            completed: '#166534', cancelled: '#991b1b', no_show: '#991b1b'
+        };
+        const statusOptions = ['scheduled','waiting','in_progress','completed','cancelled','no_show'];
+
+        document.getElementById('queueList').innerHTML = queue.map(a => `
+            <tr>
+                <td>${a.token_number ?? '-'}</td>
+                <td style="font-family:monospace;">${a.appointment_time?.slice(0,5) || ''}</td>
+                <td style="font-weight:500;">${a.patients?.full_name || 'Unknown'} <span style="color:var(--text-light); font-size:12px;">(${a.patients?.patient_code || ''})</span></td>
+                <td>${a.staff?.full_name || 'Unassigned'}</td>
+                <td>
+                    <select onchange="updateAppointmentStatus('${a.id}', this.value)"
+                        style="padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:${statusColors[a.status]}; color:${statusText[a.status]}; font-weight:600; font-size:12.5px; text-transform:capitalize;">
+                        ${statusOptions.map(s => `<option value="${s}" ${s === a.status ? 'selected' : ''}>${s.replace('_',' ')}</option>`).join('')}
+                    </select>
+                </td>
+                <td></td>
+            </tr>
+        `).join('');
+    }
+
+    // One-click status change - this is the actual "queue management" the
+    // doctor/receptionist uses all day: scheduled -> waiting (checked in) ->
+    // in_progress (with doctor now) -> completed, or cancelled/no_show.
+    async function updateAppointmentStatus(appointmentId, newStatus) {
+        const { error } = await supabaseClient
+            .from('appointments')
+            .update({ status: newStatus })
+            .eq('id', appointmentId);
+
+        if (error) {
+            alert('Error updating status: ' + error.message);
+            await loadQueue();
+        }
+    }
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        event.target.closest('.nav-link').classList.add('active');
+
+        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue" };
+        document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
+    }
+
+    checkSession();
+</script>
+</body>
+</html>
