@@ -37,3 +37,8 @@ Not a polished 10-feature product — a real, working Step 1 (patient registry) 
 
 ## Explicit non-goals for the first demo
 No billing, no SMS, no prescriptions-as-PDF, no multi-doctor scheduling conflicts logic — these are real features for later, not blockers for a first conversation with the clinic.
+
+
+ const supabaseClient = window.supabase.createClient(
+    'https://rbgcyrlaoygugizuxste.supabase.co',
+    'sb_publishable_R7qmvPIOIkWN0lu-oUDc8g_OBcVo59X',

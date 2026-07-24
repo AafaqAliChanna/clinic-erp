@@ -349,6 +349,60 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Patient Detail view: hidden until a patient row is clicked.
+                     Shows their full visit history and a form to log a new visit -
+                     this is what a doctor actually opens during a consultation. -->
+                <div id="patientDetailView" style="display:none;">
+                    <div style="margin: 20px 0 16px;">
+                        <button class="btn btn-secondary" onclick="closePatientDetail()"><i class="fas fa-arrow-left"></i> Back to Patient List</button>
+                    </div>
+                    <div class="card" style="margin-bottom:20px;">
+                        <h3 id="detailPatientName" style="margin-bottom:4px;"></h3>
+                        <p id="detailPatientMeta" style="color:var(--text-light); font-size:13px;"></p>
+                    </div>
+
+                    <div class="card" style="margin-bottom:20px;">
+                        <h4 style="margin-bottom:14px;">Log New Visit</h4>
+                        <div class="form-row">
+                            <div>
+                                <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Doctor *</label>
+                                <select id="visitDoctor"></select>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Visit Date</label>
+                                <input id="visitDate" type="date">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Follow-up Date</label>
+                                <input id="visitFollowUp" type="date">
+                            </div>
+                        </div>
+                        <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+                            <div>
+                                <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Diagnosis</label>
+                                <input id="visitDiagnosis" placeholder="e.g. Viral fever, Hypertension...">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:600; display:block; margin-bottom:5px;">Prescription</label>
+                                <input id="visitPrescription" placeholder="Medicines / instructions">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="handleAddVisit()"><i class="fas fa-notes-medical"></i> Save Visit</button>
+                    </div>
+
+                    <div class="card">
+                        <h4 style="margin-bottom:14px;">Visit History</h4>
+                        <table>
+                            <thead>
+                                <tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Prescription</th><th>Follow-up</th></tr>
+                            </thead>
+                            <tbody id="visitHistoryList">
+                                <tr><td colspan="5" class="empty-state">No visits yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- ---------------- TODAY'S QUEUE / APPOINTMENTS ---------------- -->
@@ -425,10 +479,10 @@
     // This is a SEPARATE Supabase project from Nizamix - do not reuse
     // Nizamix's URL/key here, they must point to the clinic database.
     // ============================================================
-  const supabaseClient = window.supabase.createClient(
-    'https://rbgcyrlaoygugizuxste.supabase.co',
-    'sb_publishable_R7qmvPIOIkWN0lu-oUDc8g_OBcVo59X',
-);
+    const supabaseClient = window.supabase.createClient(
+        'https://rbgcyrlaoygugizuxste.supabase.co',
+        'sb_publishable_R7qmvPIOIkWN0lu-oUDc8g_OBcVo59X'
+    );
 
     // Resolved after login from the logged-in user's own staff row -
     // never hardcoded, so this same file works for a second clinic later
@@ -559,7 +613,7 @@
             return;
         }
         tbody.innerHTML = list.map(p => `
-            <tr>
+            <tr onclick="openPatientDetail('${p.id}')" style="cursor:pointer;">
                 <td><span class="patient-code-badge">${p.patient_code}</span></td>
                 <td style="font-weight:500;">${p.full_name}</td>
                 <td>${p.phone || 'N/A'}</td>
@@ -772,6 +826,104 @@
             alert('Error updating status: ' + error.message);
             await loadQueue();
         }
+    }
+
+    // ---------------- Patient Detail / Visit History ----------------
+
+    let currentDetailPatientId = null;
+
+    // Opens the detail view for one patient: hides the list, shows their
+    // info, fills the doctor dropdown, defaults visit date to today, and
+    // loads their existing visit history.
+    async function openPatientDetail(patientId) {
+        const patient = allPatients.find(p => p.id === patientId);
+        if (!patient) return;
+
+        currentDetailPatientId = patientId;
+        document.querySelector('#patients .card').style.display = 'none';
+        document.querySelector('.search-bar').style.display = 'none';
+        document.getElementById('patientDetailView').style.display = 'block';
+
+        document.getElementById('detailPatientName').textContent = `${patient.full_name} (${patient.patient_code})`;
+        document.getElementById('detailPatientMeta').textContent =
+            `${patient.age ? patient.age + ' yrs, ' : ''}${patient.gender || ''} · ${patient.phone || 'No phone on file'}`;
+
+        document.getElementById('visitDoctor').innerHTML = staffCache
+            .filter(s => s.role === 'Doctor')
+            .map(s => `<option value="${s.id}">${s.full_name}</option>`).join('')
+            || staffCache.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
+        document.getElementById('visitDate').value = todayStr();
+
+        await loadVisitHistory(patientId);
+    }
+
+    function closePatientDetail() {
+        document.getElementById('patientDetailView').style.display = 'none';
+        document.querySelector('#patients .card').style.display = 'block';
+        document.querySelector('.search-bar').style.display = 'block';
+        currentDetailPatientId = null;
+    }
+
+    async function loadVisitHistory(patientId) {
+        const { data, error } = await supabaseClient
+            .from('visits')
+            .select('visit_date, diagnosis, prescription, follow_up_date, staff(full_name)')
+            .eq('clinic_id', CURRENT_CLINIC_ID)
+            .eq('patient_id', patientId)
+            .order('visit_date', { ascending: false });
+
+        if (error) {
+            document.getElementById('visitHistoryList').innerHTML =
+                `<tr><td colspan="5" class="empty-state" style="color:#dc2626;">Error: ${error.message}</td></tr>`;
+            return;
+        }
+
+        const visits = data || [];
+        if (visits.length === 0) {
+            document.getElementById('visitHistoryList').innerHTML = '<tr><td colspan="5" class="empty-state">No visits recorded yet</td></tr>';
+            return;
+        }
+
+        document.getElementById('visitHistoryList').innerHTML = visits.map(v => `
+            <tr>
+                <td style="font-family:monospace;">${v.visit_date}</td>
+                <td>${v.staff?.full_name || 'N/A'}</td>
+                <td>${v.diagnosis || '-'}</td>
+                <td>${v.prescription || '-'}</td>
+                <td>${v.follow_up_date || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Saves a new visit for whichever patient is currently open. Diagnosis
+    // and prescription are optional (some visits are just a check-up with
+    // notes only) but a doctor must always be selected.
+    async function handleAddVisit() {
+        const doctorId = document.getElementById('visitDoctor').value;
+        const date = document.getElementById('visitDate').value;
+
+        if (!doctorId || !date) {
+            alert('Doctor and Visit Date are required.');
+            return;
+        }
+
+        const { error } = await supabaseClient.from('visits').insert({
+            clinic_id: CURRENT_CLINIC_ID,
+            patient_id: currentDetailPatientId,
+            doctor_id: doctorId,
+            visit_date: date,
+            diagnosis: document.getElementById('visitDiagnosis').value.trim() || null,
+            prescription: document.getElementById('visitPrescription').value.trim() || null,
+            follow_up_date: document.getElementById('visitFollowUp').value || null
+        });
+
+        if (error) {
+            alert('Error saving visit: ' + error.message);
+            return;
+        }
+
+        ['visitDiagnosis','visitPrescription','visitFollowUp'].forEach(id => document.getElementById(id).value = '');
+        await loadVisitHistory(currentDetailPatientId);
     }
 
     function showPage(pageId) {
