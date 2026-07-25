@@ -23,3 +23,5 @@
 - Grading/passing assumptions N/A (that's Nizamix) - no clinic-specific business rules confirmed yet (walk-in vs token system, multi-doctor scheduling conflicts) since no real clinic has seen this yet
 
 "Step 4 done — visit history live, clickable patient detail view, tested." That's patient registry, multi-clinic isolation, appointment queue, and visit history — four real modules, same discipline as Nizamix, still zero clinic eyes on it yet. Worth holding that fact consciously, not just noting it.
+
+today stuck was on login understand error solved that by changing more than 200 lines
