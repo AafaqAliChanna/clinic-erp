@@ -818,60 +818,99 @@ async function handleAddVisit() {
 
 // Opens a print-formatted prescription slip in a new tab and triggers
 // the browser's native print dialog (free, works offline, no PDF library).
+//
+// HOW THE LIVE SERVER BUG WAS DIAGNOSED AND WHY THIS FIX WORKS
+// --------------------------------------------------------------
+// VS Code Live Server injects its live-reload script by doing a plain-text
+// search of the raw file bytes and replacing the first occurrence of the
+// closing-body-tag pattern it finds. When this file had that closing tag
+// pattern inside a JavaScript string literal (inside the script block),
+// Live Server found THAT occurrence first and injected a script element
+// there - directly inside a JS string, producing a syntax error that crashed
+// the entire script block, which is why no function including handleLogin
+// existed at all in the browser.
+//
+// Every rewrite of the print section failed because every version still
+// contained that pattern somewhere in the script block. Removing the print
+// button entirely made the pattern disappear, so login worked again.
+//
+// Two-part fix:
+//   1. Blob URL - the popup HTML is built at runtime and opened as a blob:
+//      URL. Live Server only injects into files it serves from disk; a
+//      blob: URL is never read from disk so Live Server cannot touch it.
+//   2. Split closing tags - in the lines array below, the closing body and
+//      html tags are written as two string pieces joined at runtime
+//      ('</' + 'body>') so that pattern never appears literally in the
+//      source file inside the script block, giving Live Server nothing to
+//      match on even if it scans this area.
 function printPrescription(index) {
   const visit = currentVisitsCache[index];
   if (!visit) return;
   const patient = allPatients.find(p => p.id === currentDetailPatientId);
-  const clinicName = document.getElementById('sidebarClinicName').textContent + ' ' + document.getElementById('sidebarClinicSubtitle').textContent;
+  const clinicName = document.getElementById('sidebarClinicName').textContent
+    + ' ' + document.getElementById('sidebarClinicSubtitle').textContent;
 
-  const win = window.open('', '_blank', 'width=650,height=800');
-  const doc = win.document;
+  const patientName   = patient ? patient.full_name   : '';
+  const patientCode   = patient ? patient.patient_code : '';
+  const patientAge    = (patient && patient.age)    ? patient.age           : 'N/A';
+  const patientGender = (patient && patient.gender) ? patient.gender        : 'N/A';
+  const doctorName    = visit.staff                 ? visit.staff.full_name : 'N/A';
 
-  // Every piece of HTML/CSS is collected into one array first, then joined
-  // into a single string ONE TIME at the end. This is deliberately different
-  // from the earlier version, which called doc.write() many times in a row -
-  // that approach let a live-server auto-reload script get injected in
-  // between two of those calls, splitting one JS statement into two broken
-  // pieces and crashing the whole page's script. Building everything as one
-  // array first means there's no mid-statement gap for anything to land in.
-  const parts = [];
-  parts.push('<html><head><title>Prescription</title><style>');
-  parts.push('body{font-family:Segoe UI,sans-serif;padding:40px;color:#134e4a;}');
-  parts.push('.header{text-align:center;border-bottom:3px solid #0d9488;padding-bottom:16px;margin-bottom:24px;}');
-  parts.push('.header h1{color:#0d9488;font-size:22px;}');
-  parts.push('.row{display:flex;justify-content:space-between;margin-bottom:14px;font-size:14px;}');
-  parts.push('.section{margin-bottom:20px;}');
-  parts.push('.section h3{font-size:12px;text-transform:uppercase;color:#5f8a86;margin-bottom:6px;}');
-  parts.push('.section p{font-size:16px;white-space:pre-wrap;}');
-  parts.push('.footer{margin-top:60px;display:flex;justify-content:space-between;font-size:13px;color:#5f8a86;}');
-  parts.push('@media print{.no-print{display:none;}}');
-  parts.push('</style></head><body>');
-  parts.push('<div class="header"><h1>' + clinicName + '</h1><p style="font-size:12px;color:#5f8a86;">Prescription Slip</p></div>');
-  parts.push('<div class="row"><span><strong>Patient:</strong> ' + (patient ? patient.full_name : '') + ' (' + (patient ? patient.patient_code : '') + ')</span><span><strong>Date:</strong> ' + visit.visit_date + '</span></div>');
-  parts.push('<div class="row"><span><strong>Age/Gender:</strong> ' + (patient && patient.age ? patient.age : 'N/A') + ' / ' + (patient ? (patient.gender || 'N/A') : 'N/A') + '</span><span><strong>Doctor:</strong> ' + (visit.staff ? visit.staff.full_name : 'N/A') + '</span></div>');
-  parts.push('<div class="section"><h3>Diagnosis</h3><p>' + (visit.diagnosis || 'Not recorded') + '</p></div>');
-  parts.push('<div class="section"><h3>Prescription (Rx)</h3><p>' + (visit.prescription || 'Not recorded') + '</p></div>');
-  if (visit.follow_up_date) {
-    parts.push('<div class="section"><h3>Follow-up Date</h3><p>' + visit.follow_up_date + '</p></div>');
-  }
+  // Closing tags are written as concatenated halves so the literal pattern
+  // does not appear anywhere inside this script block - see comment above.
+  const CLOSE_STYLE = '</' + 'style>';
+  const CLOSE_HEAD  = '</' + 'head>';
+  const OPEN_BODY   = '<' + 'body>';
+  const CLOSE_BODY  = '</' + 'body>';
+  const CLOSE_HTML  = '</' + 'html>';
 
+  const lines = [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<title>Prescription - ' + patientName + '</title>',
+    '<style>',
+    'body{font-family:Segoe UI,sans-serif;padding:40px;color:#134e4a;max-width:700px;margin:0 auto;}',
+    '.hdr{text-align:center;border-bottom:3px solid #0d9488;padding-bottom:16px;margin-bottom:24px;}',
+    '.hdr h1{color:#0d9488;font-size:22px;margin:0 0 4px;}',
+    '.hdr p{font-size:12px;color:#5f8a86;margin:0;}',
+    '.row{display:flex;justify-content:space-between;margin-bottom:14px;font-size:14px;}',
+    '.sec{margin-bottom:20px;}',
+    '.sec h3{font-size:12px;text-transform:uppercase;color:#5f8a86;margin-bottom:6px;}',
+    '.sec p{font-size:16px;white-space:pre-wrap;margin:0;}',
+    '#rxPrintBtn{display:block;margin:36px auto 0;padding:10px 28px;',
+    '  background:#0d9488;color:#fff;border:none;border-radius:8px;',
+    '  font-size:15px;font-weight:600;cursor:pointer;}',
+    '@media print{#rxPrintBtn{display:none;}}',
+    CLOSE_STYLE,
+    CLOSE_HEAD,
+    OPEN_BODY,
+    '<div class="hdr"><h1>' + clinicName + '</h1><p>Prescription Slip</p></div>',
+    '<div class="row">',
+    '  <span><strong>Patient:</strong> ' + patientName + ' (' + patientCode + ')</span>',
+    '  <span><strong>Date:</strong> ' + visit.visit_date + '</span>',
+    '</div>',
+    '<div class="row">',
+    '  <span><strong>Age / Gender:</strong> ' + patientAge + ' / ' + patientGender + '</span>',
+    '  <span><strong>Doctor:</strong> ' + doctorName + '</span>',
+    '</div>',
+    '<div class="sec"><h3>Diagnosis</h3><p>' + (visit.diagnosis || 'Not recorded') + '</p></div>',
+    '<div class="sec"><h3>Prescription (Rx)</h3><p>' + (visit.prescription || 'Not recorded') + '</p></div>',
+    visit.follow_up_date
+      ? '<div class="sec"><h3>Follow-up Date</h3><p>' + visit.follow_up_date + '</p></div>'
+      : '',
+    '<button id="rxPrintBtn" onclick="window.print()">Print / Save as PDF</button>',
+    CLOSE_BODY,
+    CLOSE_HTML
+  ];
 
-  // One single write, using innerHTML on the popup's own body instead of
-  // document.write() - this is the second half of the fix. document.write()
-  // opens a live "write stream" that external scripts (like live-server's
-  // auto-reload snippet) can inject into mid-stream. innerHTML on an already-
-  // opened blank document has no such stream to inject into.
-  doc.open();
-  doc.write('<!DOCTYPE html>');
-  doc.close();
-  doc.documentElement.innerHTML = parts.join('');
-
-  // The print button's click handler is attached here in real JS, not as
-  // an inline onclick string - same discipline as the rest of this file.
-  const printBtn = doc.getElementById('printBtn');
-  if (printBtn) {
-    printBtn.addEventListener('click', function () { win.print(); });
-  }
+  const html = lines.join('\n');
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'width=680,height=820');
+  // Blob URL is not revoked here - revoking before the popup finishes
+  // loading would blank the window. The browser frees it when the tab closes.
 }
 
 /* ============================================================
