@@ -271,6 +271,14 @@ label.field-label { font-size:12px; font-weight:600; display:block; margin-botto
             <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Total Patients</h4>
             <p style="font-size:30px; font-weight:700; color:var(--primary);" id="totalPatients">0</p>
           </div>
+          <!-- Hidden by default, shown only for Doctor role via
+               applyRoleVisibility(). Data itself is also protected at the
+               database level by RLS on visits.fee_amount, so this card
+               being hidden is a UI convenience, not the actual security. -->
+          <div class="card" id="revenueCard" style="display:none;">
+            <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Revenue This Month</h4>
+            <p style="font-size:30px; font-weight:700; color:var(--success);" id="revenueThisMonth">Rs. 0</p>
+          </div>
         </div>
 
         <!-- Common Conditions card: counts visits.diagnosis_category over
@@ -409,6 +417,16 @@ label.field-label { font-size:12px; font-weight:600; display:block; margin-botto
               <div>
                 <label class="field-label" for="visitPrescription">Prescription</label>
                 <input id="visitPrescription" placeholder="Medicines / instructions">
+              </div>
+              <!-- Hidden by default. Only unhidden by JS (applyRoleVisibility)
+                   if the logged-in user's role is Doctor. Even if someone
+                   forces this visible via DevTools, the actual fee_amount
+                   data still won't come back from Supabase for a non-doctor -
+                   the RLS policy on visits enforces that at the database
+                   level, not this element's visibility. -->
+              <div id="visitFeeWrapper" style="display:none;">
+                <label class="field-label" for="visitFee">Fee (Rs.) - Doctor only</label>
+                <input id="visitFee" type="number" step="0.01" placeholder="e.g. 1500">
               </div>
             </div>
             <button class="btn btn-primary" id="saveVisitBtn"><i class="fas fa-notes-medical"></i> Save Visit</button>
@@ -549,6 +567,12 @@ const supabaseClient = window.supabase.createClient(
    login and after each data load.
    ============================================================ */
 let CURRENT_CLINIC_ID = null;   // resolved from the logged-in user's staff row
+let CURRENT_STAFF_ROLE = '';    // used only to decide what to SHOW in the UI -
+                                 // the real security boundary for fee_amount is
+                                 // the RLS policy on the visits table itself,
+                                 // not this variable. A non-doctor hiding this
+                                 // element still can't fetch the data even if
+                                 // they inspect the page or call the API directly.
 let allPatients = [];           // full patient list cache, for instant search
 let staffCache = [];            // full staff list cache, for dropdowns
 let currentDetailPatientId = null; // which patient's detail view is open
@@ -629,6 +653,7 @@ async function resolveClinicContext() {
   }
 
   CURRENT_CLINIC_ID = staffRow.clinic_id;
+  CURRENT_STAFF_ROLE = staffRow.role || '';
   document.getElementById('userName').textContent = staffRow.full_name || 'Staff';
   document.getElementById('userRole').textContent = staffRow.role || 'Clinic Staff';
   document.getElementById('userInitial').textContent = (staffRow.full_name || 'S').charAt(0).toUpperCase();
@@ -688,6 +713,50 @@ async function loadAllData() {
   await populateAppointmentDropdowns();
   await loadQueue();
   await loadCommonConditions();
+  applyRoleVisibility();
+  if (CURRENT_STAFF_ROLE === 'Doctor') {
+    await loadRevenue();
+  }
+}
+
+// Shows/hides UI elements based on the logged-in user's role. This is a
+// convenience for a cleaner interface, NOT the actual security boundary -
+// fee_amount is protected by an RLS policy on the visits table itself,
+// so even if this function were skipped entirely, a non-doctor still
+// could not retrieve real fee data from Supabase.
+function applyRoleVisibility() {
+  const isDoctor = CURRENT_STAFF_ROLE === 'Doctor';
+  document.getElementById('visitFeeWrapper').style.display = isDoctor ? 'block' : 'none';
+  document.getElementById('revenueCard').style.display = isDoctor ? 'block' : 'none';
+}
+
+// Sums visits.fee_amount for the current calendar month. Only ever
+// called when CURRENT_STAFF_ROLE === 'Doctor' (see loadAllData above),
+// and even if called by mistake for a non-doctor, the RLS policy means
+// Supabase would simply return no fee_amount values to sum.
+async function loadRevenue() {
+  const now = new Date();
+  const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+
+  const result = await supabaseClient
+    .from('visits')
+    .select('fee_amount')
+    .eq('clinic_id', CURRENT_CLINIC_ID)
+    .gte('visit_date', monthStart);
+
+  if (result.error) {
+    console.error('Failed to load revenue:', result.error);
+    return;
+  }
+
+  const rows = result.data || [];
+  let total = 0;
+  for (const row of rows) {
+    if (row.fee_amount != null) {
+      total += Number(row.fee_amount);
+    }
+  }
+  document.getElementById('revenueThisMonth').textContent = 'Rs. ' + total.toLocaleString();
 }
 
 // Counts visits.diagnosis_category for the current calendar month,
@@ -918,6 +987,9 @@ async function handleAddVisit() {
     return;
   }
 
+  const feeInput = document.getElementById('visitFee');
+  const feeValue = feeInput && feeInput.value ? Number(feeInput.value) : null;
+
   const { error } = await supabaseClient.from('visits').insert({
     clinic_id: CURRENT_CLINIC_ID,
     patient_id: currentDetailPatientId,
@@ -926,7 +998,8 @@ async function handleAddVisit() {
     diagnosis_category: document.getElementById('visitDiagnosisCategory').value || null,
     diagnosis: document.getElementById('visitDiagnosis').value.trim() || null,
     prescription: document.getElementById('visitPrescription').value.trim() || null,
-    follow_up_date: document.getElementById('visitFollowUp').value || null
+    follow_up_date: document.getElementById('visitFollowUp').value || null,
+    fee_amount: feeValue
   });
 
   if (error) {
@@ -934,7 +1007,7 @@ async function handleAddVisit() {
     return;
   }
 
-  ['visitDiagnosisCategory','visitDiagnosis','visitPrescription','visitFollowUp'].forEach(id => document.getElementById(id).value = '');
+  ['visitDiagnosisCategory','visitDiagnosis','visitPrescription','visitFollowUp','visitFee'].forEach(id => document.getElementById(id).value = '');
   await loadVisitHistory(currentDetailPatientId);
 }
 
