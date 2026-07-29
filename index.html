@@ -401,9 +401,46 @@ label.field-label { font-size:12px; font-weight:600; display:block; margin-botto
             <h2 style="margin-bottom:4px;">Today's Queue</h2>
             <p style="color:var(--text-light);" id="queueDateLabel">Today's appointments</p>
           </div>
-          <button class="btn btn-primary" id="showAddAppointmentBtn">
-            <i class="fas fa-plus"></i> Add Appointment
-          </button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="showQuickWalkInBtn" style="background:var(--success);">
+              <i class="fas fa-bolt"></i> New Walk-in Patient
+            </button>
+            <button class="btn btn-primary" id="showAddAppointmentBtn">
+              <i class="fas fa-plus"></i> Add Appointment (existing patient)
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Walk-in form: name + phone only. Saving this does TWO
+             things at once - creates a new patient row (with an
+             auto-generated patient_code, same as the full registry form)
+             AND immediately books them into today's queue with the next
+             token number. This is the fast path for a receptionist facing
+             a line of walk-ins, instead of filling the full patient form
+             first and then a separate appointment form after. -->
+        <div id="quickWalkInForm" class="card" style="display:none; margin-bottom:22px; border-color:var(--success);">
+          <h4 style="margin-bottom:14px; color:var(--success);"><i class="fas fa-bolt"></i> Quick Walk-in</h4>
+          <div class="form-row">
+            <div>
+              <label class="field-label" for="quickName">Full Name *</label>
+              <input id="quickName" placeholder="Patient's name">
+            </div>
+            <div>
+              <label class="field-label" for="quickPhone">Phone</label>
+              <input id="quickPhone" placeholder="03xx-xxxxxxx (optional)">
+            </div>
+            <div>
+              <label class="field-label" for="quickDoctor">Doctor *</label>
+              <select id="quickDoctor"></select>
+            </div>
+          </div>
+          <p style="color:var(--text-light); font-size:12.5px; margin-bottom:14px;">
+            Patient ID and token number are assigned automatically. Age, gender, and address can be filled in later from the Patients page.
+          </p>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" id="saveQuickWalkInBtn" style="background:var(--success);"><i class="fas fa-check"></i> Add to Queue</button>
+            <button class="btn btn-secondary" id="cancelQuickWalkInBtn">Cancel</button>
+          </div>
         </div>
 
         <!-- Add Appointment form. Token number auto-fills via
@@ -957,6 +994,95 @@ function hideAddAppointmentForm() {
   ['apptToken','apptNotes'].forEach(id => document.getElementById(id).value = '');
 }
 
+// ---------------------------------------------------------------
+// QUICK WALK-IN: name + phone only, creates the patient AND books
+// today's appointment in one action. This is the fast path for a
+// receptionist facing a line of walk-ins - no need to open the full
+// patient registry form first, then a separate appointment form after.
+// ---------------------------------------------------------------
+
+async function showQuickWalkInForm() {
+  document.getElementById('quickWalkInForm').style.display = 'block';
+  const doctors = staffCache.filter(s => s.role === 'Doctor');
+  const doctorList = doctors.length ? doctors : staffCache;
+  document.getElementById('quickDoctor').innerHTML =
+    doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
+  document.getElementById('quickName').focus();
+}
+
+function hideQuickWalkInForm() {
+  document.getElementById('quickWalkInForm').style.display = 'none';
+  document.getElementById('quickName').value = '';
+  document.getElementById('quickPhone').value = '';
+}
+
+// Runs three steps in sequence: get a new patient_code, insert the
+// patient, then insert today's appointment for that new patient. If
+// any step fails, we stop and show the error rather than leaving a
+// half-created patient with no appointment.
+async function handleQuickWalkIn() {
+  const name = document.getElementById('quickName').value.trim();
+  const phone = document.getElementById('quickPhone').value.trim();
+  const doctorId = document.getElementById('quickDoctor').value;
+
+  if (!name || !doctorId) {
+    alert('Patient name and Doctor are required.');
+    return;
+  }
+
+  const codeResult = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
+  if (codeResult.error) {
+    alert('Error generating patient ID: ' + codeResult.error.message);
+    return;
+  }
+  const newPatientCode = codeResult.data;
+
+  const patientInsert = await supabaseClient.from('patients').insert({
+    clinic_id: CURRENT_CLINIC_ID,
+    patient_code: newPatientCode,
+    full_name: name,
+    phone: phone || null
+  }).select().single();
+
+  if (patientInsert.error) {
+    alert('Error creating patient: ' + patientInsert.error.message);
+    return;
+  }
+  const newPatientId = patientInsert.data.id;
+
+  const today = todayStr();
+  const tokenResult = await supabaseClient.rpc('generate_token_number', {
+    p_clinic_id: CURRENT_CLINIC_ID,
+    p_date: today
+  });
+  const tokenNumber = tokenResult.error ? null : tokenResult.data;
+
+  const now = new Date();
+  const currentTime = now.toTimeString().slice(0, 5);
+
+  const apptInsert = await supabaseClient.from('appointments').insert({
+    clinic_id: CURRENT_CLINIC_ID,
+    patient_id: newPatientId,
+    doctor_id: doctorId,
+    appointment_date: today,
+    appointment_time: currentTime,
+    token_number: tokenNumber,
+    status: 'waiting'
+  });
+
+  if (apptInsert.error) {
+    alert('Patient was created (ID: ' + newPatientCode + ') but adding them to the queue failed: ' + apptInsert.error.message);
+    hideQuickWalkInForm();
+    await loadPatients();
+    return;
+  }
+
+  hideQuickWalkInForm();
+  await loadPatients();
+  await loadQueue();
+  alert(name + ' added - Patient ID ' + newPatientCode + ', Token #' + tokenNumber);
+}
+
 // Fetches the next token number for whichever date is currently
 // selected. Called both when the form opens and whenever the date
 // input changes, so the token always matches the correct day.
@@ -1113,6 +1239,9 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Appointments page
+  document.getElementById('showQuickWalkInBtn').addEventListener('click', showQuickWalkInForm);
+  document.getElementById('saveQuickWalkInBtn').addEventListener('click', handleQuickWalkIn);
+  document.getElementById('cancelQuickWalkInBtn').addEventListener('click', hideQuickWalkInForm);
   document.getElementById('showAddAppointmentBtn').addEventListener('click', showAddAppointmentForm);
   document.getElementById('saveAppointmentBtn').addEventListener('click', handleAddAppointment);
   document.getElementById('cancelAppointmentBtn').addEventListener('click', hideAddAppointmentForm);
