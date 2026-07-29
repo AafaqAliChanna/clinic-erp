@@ -266,11 +266,28 @@ label.field-label { font-size:12px; font-weight:600; display:block; margin-botto
           <h2 style="margin-bottom:4px;">Dashboard</h2>
           <p style="color:var(--text-light);" id="dashboardWelcome">Welcome</p>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:20px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:20px; margin-bottom:20px;">
           <div class="card">
             <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Total Patients</h4>
             <p style="font-size:30px; font-weight:700; color:var(--primary);" id="totalPatients">0</p>
           </div>
+        </div>
+
+        <!-- Common Conditions card: counts visits.diagnosis_category over
+             the current calendar month, ranked most-to-least frequent.
+             Filled by loadCommonConditions(). Relies on doctors actually
+             picking a category on the visit form - older visits recorded
+             before this feature existed won't have one and are excluded. -->
+        <div class="card">
+          <h4 style="margin-bottom:14px;">Most Common Conditions This Month</h4>
+          <table>
+            <thead>
+              <tr><th>Condition</th><th>Cases</th></tr>
+            </thead>
+            <tbody id="commonConditionsList">
+              <tr><td colspan="2" class="empty-state">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -367,9 +384,26 @@ label.field-label { font-size:12px; font-weight:600; display:block; margin-botto
                 <input id="visitFollowUp" type="date">
               </div>
             </div>
-            <div class="form-row" style="grid-template-columns:1fr 1fr;">
+            <div class="form-row" style="grid-template-columns:1fr 1fr 1fr;">
               <div>
-                <label class="field-label" for="visitDiagnosis">Diagnosis</label>
+                <label class="field-label" for="visitDiagnosisCategory">Diagnosis Category</label>
+                <select id="visitDiagnosisCategory">
+                  <option value="">Select (optional)</option>
+                  <option value="Flu / Viral Fever">Flu / Viral Fever</option>
+                  <option value="Common Cold">Common Cold</option>
+                  <option value="Hypertension">Hypertension</option>
+                  <option value="Diabetes">Diabetes</option>
+                  <option value="Gastroenteritis / Stomach Issues">Gastroenteritis / Stomach Issues</option>
+                  <option value="Skin Infection">Skin Infection</option>
+                  <option value="Respiratory Infection">Respiratory Infection</option>
+                  <option value="Allergy">Allergy</option>
+                  <option value="Injury / Wound">Injury / Wound</option>
+                  <option value="Routine Checkup">Routine Checkup</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="visitDiagnosis">Diagnosis Detail (free text)</label>
                 <input id="visitDiagnosis" placeholder="e.g. Viral fever, Hypertension...">
               </div>
               <div>
@@ -653,6 +687,56 @@ async function loadAllData() {
   await loadStaffCache();
   await populateAppointmentDropdowns();
   await loadQueue();
+  await loadCommonConditions();
+}
+
+// Counts visits.diagnosis_category for the current calendar month,
+// grouped and ranked most-frequent first. Only visits with a category
+// selected are counted - free-text-only diagnoses (older visits, or a
+// doctor who picked "Other") are excluded from this ranking on purpose,
+// since counting inconsistent free text would give a misleading number.
+async function loadCommonConditions() {
+  const now = new Date();
+  const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+
+  const result = await supabaseClient
+    .from('visits')
+    .select('diagnosis_category')
+    .eq('clinic_id', CURRENT_CLINIC_ID)
+    .gte('visit_date', monthStart)
+    .not('diagnosis_category', 'is', null);
+
+  if (result.error) {
+    document.getElementById('commonConditionsList').innerHTML =
+      '<tr><td colspan="2" class="empty-state" style="color:#dc2626;">Error: ' + result.error.message + '</td></tr>';
+    return;
+  }
+
+  const rows = result.data || [];
+  const counts = {};
+  for (const row of rows) {
+    const category = row.diagnosis_category;
+    counts[category] = (counts[category] || 0) + 1;
+  }
+
+  const ranked = Object.keys(counts)
+    .map(function (category) { return { category: category, count: counts[category] }; })
+    .sort(function (a, b) { return b.count - a.count; });
+
+  if (ranked.length === 0) {
+    document.getElementById('commonConditionsList').innerHTML =
+      '<tr><td colspan="2" class="empty-state">No categorized visits yet this month</td></tr>';
+    return;
+  }
+
+  let html = '';
+  for (const item of ranked) {
+    html += '<tr>';
+    html += '<td style="font-weight:500;">' + item.category + '</td>';
+    html += '<td>' + item.count + '</td>';
+    html += '</tr>';
+  }
+  document.getElementById('commonConditionsList').innerHTML = html;
 }
 
 /* ============================================================
@@ -839,6 +923,7 @@ async function handleAddVisit() {
     patient_id: currentDetailPatientId,
     doctor_id: doctorId,
     visit_date: date,
+    diagnosis_category: document.getElementById('visitDiagnosisCategory').value || null,
     diagnosis: document.getElementById('visitDiagnosis').value.trim() || null,
     prescription: document.getElementById('visitPrescription').value.trim() || null,
     follow_up_date: document.getElementById('visitFollowUp').value || null
@@ -849,7 +934,7 @@ async function handleAddVisit() {
     return;
   }
 
-  ['visitDiagnosis','visitPrescription','visitFollowUp'].forEach(id => document.getElementById(id).value = '');
+  ['visitDiagnosisCategory','visitDiagnosis','visitPrescription','visitFollowUp'].forEach(id => document.getElementById(id).value = '');
   await loadVisitHistory(currentDetailPatientId);
 }
 
