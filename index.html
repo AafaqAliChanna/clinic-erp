@@ -171,6 +171,24 @@ tr:hover td { background-color:var(--bg-light); }
 }
 
 label.field-label { font-size:12px; font-weight:600; display:block; margin-bottom:5px; }
+
+/* ---------- AUTOCOMPLETE DROPDOWN (quick walk-in name search) ---------- */
+.autocomplete-wrapper { position:relative; }
+.autocomplete-list {
+  position:absolute; top:100%; left:0; right:0; background:var(--card-bg);
+  border:1px solid var(--border-color); border-top:none;
+  border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto;
+  z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.10); display:none;
+}
+.autocomplete-list.open { display:block; }
+.autocomplete-item {
+  padding:10px 14px; cursor:pointer; font-size:13.5px;
+  border-bottom:1px solid var(--border-color);
+}
+.autocomplete-item:last-child { border-bottom:none; }
+.autocomplete-item:hover { background:var(--bg-light); }
+.autocomplete-item strong { display:block; font-size:14px; }
+.autocomplete-item span { font-size:12px; color:var(--text-light); }
 </style>
 </head>
 <body>
@@ -474,20 +492,32 @@ label.field-label { font-size:12px; font-weight:600; display:block; margin-botto
           <h4 style="margin-bottom:14px; color:var(--success);"><i class="fas fa-bolt"></i> Quick Walk-in</h4>
           <div class="form-row">
             <div>
-              <label class="field-label" for="quickName">Full Name *</label>
-              <input id="quickName" placeholder="Patient's name">
+              <label class="field-label" for="quickName">Name * <span style="font-weight:400; color:var(--text-light);">(type to search existing or register new)</span></label>
+              <div class="autocomplete-wrapper">
+                <input id="quickName" placeholder="Type name..." autocomplete="off">
+                <div id="quickNameList" class="autocomplete-list"></div>
+              </div>
+              <p id="quickSelectedInfo" style="display:none; margin-top:6px; font-size:12.5px; color:var(--success); font-weight:600;"></p>
             </div>
             <div>
               <label class="field-label" for="quickPhone">Phone</label>
               <input id="quickPhone" placeholder="03xx-xxxxxxx (optional)">
             </div>
             <div>
+              <label class="field-label" for="quickAge">Age</label>
+              <input id="quickAge" type="number" placeholder="e.g. 35" min="0" max="150">
+            </div>
+            <div>
               <label class="field-label" for="quickDoctor">Doctor *</label>
               <select id="quickDoctor"></select>
             </div>
+            <div>
+              <label class="field-label" for="quickFee">Consultation Fee (Rs.)</label>
+              <input id="quickFee" type="number" placeholder="e.g. 1000" min="0">
+            </div>
           </div>
           <p style="color:var(--text-light); font-size:12.5px; margin-bottom:14px;">
-            Patient ID and token number are assigned automatically. Age, gender, and address can be filled in later from the Patients page.
+            Typing a name shows matching patients — click to select (no duplicate record). Unrecognised names create a new patient automatically.
           </p>
           <div style="display:flex; gap:10px;">
             <button class="btn btn-primary" id="saveQuickWalkInBtn" style="background:var(--success);"><i class="fas fa-check"></i> Add to Queue</button>
@@ -577,6 +607,7 @@ let allPatients = [];           // full patient list cache, for instant search
 let staffCache = [];            // full staff list cache, for dropdowns
 let currentDetailPatientId = null; // which patient's detail view is open
 let currentVisitsCache = [];    // the visit list currently shown, for the Print button
+let quickSelectedPatientId = null; // set when user picks an existing patient in the walk-in autocomplete
 
 /* ============================================================
    SECTION 3: LOGIN / SESSION / CLINIC BRANDING
@@ -714,7 +745,7 @@ async function loadAllData() {
   await loadQueue();
   await loadCommonConditions();
   applyRoleVisibility();
-  if (CURRENT_STAFF_ROLE === 'Doctor') {
+  if (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager') {
     await loadRevenue();
   }
 }
@@ -725,36 +756,42 @@ async function loadAllData() {
 // so even if this function were skipped entirely, a non-doctor still
 // could not retrieve real fee data from Supabase.
 function applyRoleVisibility() {
-  const isDoctor = CURRENT_STAFF_ROLE === 'Doctor';
-  document.getElementById('visitFeeWrapper').style.display = isDoctor ? 'block' : 'none';
-  document.getElementById('revenueCard').style.display = isDoctor ? 'block' : 'none';
+  const isDoctor  = CURRENT_STAFF_ROLE === 'Doctor';
+  const canSeeRev = CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager';
+  document.getElementById('visitFeeWrapper').style.display = isDoctor  ? 'block' : 'none';
+  document.getElementById('revenueCard').style.display     = canSeeRev ? 'block' : 'none';
 }
 
-// Sums visits.fee_amount for the current calendar month. Only ever
-// called when CURRENT_STAFF_ROLE === 'Doctor' (see loadAllData above),
-// and even if called by mistake for a non-doctor, the RLS policy means
-// Supabase would simply return no fee_amount values to sum.
+// Sums revenue for the current calendar month from two sources:
+//   1. visits.fee_amount           - fees logged when a doctor records a full visit
+//   2. appointments.consultation_fee - fees entered at reception via Quick Walk-in
+// Visible to Doctor and Manager roles (see applyRoleVisibility).
 async function loadRevenue() {
   const now = new Date();
   const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
 
-  const result = await supabaseClient
-    .from('visits')
-    .select('fee_amount')
-    .eq('clinic_id', CURRENT_CLINIC_ID)
-    .gte('visit_date', monthStart);
+  const [visitResult, apptResult] = await Promise.all([
+    supabaseClient
+      .from('visits')
+      .select('fee_amount')
+      .eq('clinic_id', CURRENT_CLINIC_ID)
+      .gte('visit_date', monthStart),
+    supabaseClient
+      .from('appointments')
+      .select('consultation_fee')
+      .eq('clinic_id', CURRENT_CLINIC_ID)
+      .gte('appointment_date', monthStart)
+  ]);
 
-  if (result.error) {
-    console.error('Failed to load revenue:', result.error);
-    return;
-  }
+  if (visitResult.error) console.error('Failed to load visit revenue:', visitResult.error);
+  if (apptResult.error)  console.error('Failed to load appt revenue:', apptResult.error);
 
-  const rows = result.data || [];
   let total = 0;
-  for (const row of rows) {
-    if (row.fee_amount != null) {
-      total += Number(row.fee_amount);
-    }
+  for (const row of (visitResult.data || [])) {
+    if (row.fee_amount        != null) total += Number(row.fee_amount);
+  }
+  for (const row of (apptResult.data || [])) {
+    if (row.consultation_fee  != null) total += Number(row.consultation_fee);
   }
   document.getElementById('revenueThisMonth').textContent = 'Rs. ' + total.toLocaleString();
 }
@@ -876,6 +913,19 @@ function hideAddPatientForm() {
     .forEach(id => document.getElementById(id).value = '');
 }
 
+// After a successful save, the form stays open (doesn't close) - it just
+// clears itself, fetches a fresh auto-generated patient ID, and puts the
+// keyboard focus back on the Name field. This is what lets a receptionist
+// register several patients in a row without ever touching the mouse.
+async function resetPatientFormForNextEntry() {
+  ['patientName','patientPhone','patientAge','patientGender','patientAddress']
+    .forEach(id => document.getElementById(id).value = '');
+
+  const { data, error } = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
+  document.getElementById('patientCode').value = error ? '' : data;
+  document.getElementById('patientName').focus();
+}
+
 async function handleAddPatient() {
   const code = document.getElementById('patientCode').value.trim();
   const name = document.getElementById('patientName').value.trim();
@@ -904,8 +954,8 @@ async function handleAddPatient() {
     return;
   }
 
-  hideAddPatientForm();
   await loadPatients();
+  await resetPatientFormForNextEntry();
 }
 
 /* ============================================================
@@ -1161,6 +1211,10 @@ function hideAddAppointmentForm() {
 
 async function showQuickWalkInForm() {
   document.getElementById('quickWalkInForm').style.display = 'block';
+  quickSelectedPatientId = null;
+  document.getElementById('quickSelectedInfo').style.display = 'none';
+  document.getElementById('quickSelectedInfo').textContent = '';
+  document.getElementById('quickNameList').classList.remove('open');
   const doctors = staffCache.filter(s => s.role === 'Doctor');
   const doctorList = doctors.length ? doctors : staffCache;
   document.getElementById('quickDoctor').innerHTML =
@@ -1172,15 +1226,82 @@ function hideQuickWalkInForm() {
   document.getElementById('quickWalkInForm').style.display = 'none';
   document.getElementById('quickName').value = '';
   document.getElementById('quickPhone').value = '';
+  document.getElementById('quickAge').value = '';
+  document.getElementById('quickFee').value = '';
+  document.getElementById('quickNameList').classList.remove('open');
+  document.getElementById('quickSelectedInfo').style.display = 'none';
+  quickSelectedPatientId = null;
 }
 
-// Runs three steps in sequence: get a new patient_code, insert the
-// patient, then insert today's appointment for that new patient. If
-// any step fails, we stop and show the error rather than leaving a
-// half-created patient with no appointment.
+// Live name autocomplete for the Quick Walk-in form.
+// Searches allPatients (already in memory) as the user types.
+// Showing matches lets the receptionist pick an existing patient
+// instead of accidentally creating a duplicate.
+function filterQuickWalkInName() {
+  const query = document.getElementById('quickName').value.trim().toLowerCase();
+  const list  = document.getElementById('quickNameList');
+
+  // Clear any prior selection when the user edits the name field
+  if (quickSelectedPatientId) {
+    quickSelectedPatientId = null;
+    document.getElementById('quickSelectedInfo').style.display = 'none';
+  }
+
+  if (!query) {
+    list.classList.remove('open');
+    list.innerHTML = '';
+    return;
+  }
+
+  const matches = allPatients.filter(p =>
+    p.full_name.toLowerCase().includes(query)
+  );
+
+  if (matches.length === 0) {
+    list.classList.remove('open');
+    list.innerHTML = '';
+    return;
+  }
+
+  list.innerHTML = matches.map(function (p) {
+    const parts = [p.patient_code];
+    if (p.age)    parts.push(p.age + ' yrs');
+    if (p.gender) parts.push(p.gender);
+    if (p.phone)  parts.push(p.phone);
+    const meta = parts.join(' | ');
+    return '<div class="autocomplete-item" data-patient-id="' + p.id + '">'
+      + '<strong>' + p.full_name + '</strong>'
+      + '<span>' + meta + '</span>'
+      + '</div>';
+  }).join('');
+  list.classList.add('open');
+}
+
+// Called when user clicks a suggestion in the dropdown.
+// Fills in the form fields from the selected patient's existing data
+// and marks them as "selected" so handleQuickWalkIn skips patient creation.
+function selectExistingPatientForWalkIn(patientId) {
+  const patient = allPatients.find(p => p.id === patientId);
+  if (!patient) return;
+  quickSelectedPatientId = patientId;
+  document.getElementById('quickName').value  = patient.full_name;
+  document.getElementById('quickPhone').value = patient.phone || '';
+  document.getElementById('quickAge').value   = patient.age != null ? patient.age : '';
+  document.getElementById('quickNameList').classList.remove('open');
+  const info = document.getElementById('quickSelectedInfo');
+  const meta = [patient.patient_code, patient.age ? patient.age + ' yrs' : null, patient.gender].filter(Boolean).join(' · ');
+  info.textContent = '✓ Existing patient: ' + meta;
+  info.style.display = 'block';
+}
+
+// Runs in sequence: optionally create a new patient, then book the
+// appointment. Uses quickSelectedPatientId when set (existing patient path)
+// to skip patient creation entirely.
 async function handleQuickWalkIn() {
-  const name = document.getElementById('quickName').value.trim();
-  const phone = document.getElementById('quickPhone').value.trim();
+  const name     = document.getElementById('quickName').value.trim();
+  const phone    = document.getElementById('quickPhone').value.trim();
+  const ageVal   = document.getElementById('quickAge').value;
+  const feeVal   = document.getElementById('quickFee').value;
   const doctorId = document.getElementById('quickDoctor').value;
 
   if (!name || !doctorId) {
@@ -1188,25 +1309,39 @@ async function handleQuickWalkIn() {
     return;
   }
 
-  const codeResult = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
-  if (codeResult.error) {
-    alert('Error generating patient ID: ' + codeResult.error.message);
-    return;
-  }
-  const newPatientCode = codeResult.data;
+  const consultationFee = feeVal ? Number(feeVal) : null;
+  const age             = ageVal ? Number(ageVal)  : null;
 
-  const patientInsert = await supabaseClient.from('patients').insert({
-    clinic_id: CURRENT_CLINIC_ID,
-    patient_code: newPatientCode,
-    full_name: name,
-    phone: phone || null
-  }).select().single();
+  let patientId;
+  let displayCode;
 
-  if (patientInsert.error) {
-    alert('Error creating patient: ' + patientInsert.error.message);
-    return;
+  if (quickSelectedPatientId) {
+    // Existing patient selected - no new record needed
+    patientId   = quickSelectedPatientId;
+    displayCode = (allPatients.find(p => p.id === patientId) || {}).patient_code || '';
+  } else {
+    // New patient - generate ID and create the record
+    const codeResult = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
+    if (codeResult.error) {
+      alert('Error generating patient ID: ' + codeResult.error.message);
+      return;
+    }
+    displayCode = codeResult.data;
+
+    const patientInsert = await supabaseClient.from('patients').insert({
+      clinic_id:    CURRENT_CLINIC_ID,
+      patient_code: displayCode,
+      full_name:    name,
+      phone:        phone || null,
+      age:          age
+    }).select().single();
+
+    if (patientInsert.error) {
+      alert('Error creating patient: ' + patientInsert.error.message);
+      return;
+    }
+    patientId = patientInsert.data.id;
   }
-  const newPatientId = patientInsert.data.id;
 
   const today = todayStr();
   const tokenResult = await supabaseClient.rpc('generate_token_number', {
@@ -1219,26 +1354,43 @@ async function handleQuickWalkIn() {
   const currentTime = now.toTimeString().slice(0, 5);
 
   const apptInsert = await supabaseClient.from('appointments').insert({
-    clinic_id: CURRENT_CLINIC_ID,
-    patient_id: newPatientId,
-    doctor_id: doctorId,
+    clinic_id:        CURRENT_CLINIC_ID,
+    patient_id:       patientId,
+    doctor_id:        doctorId,
     appointment_date: today,
     appointment_time: currentTime,
-    token_number: tokenNumber,
-    status: 'waiting'
+    token_number:     tokenNumber,
+    consultation_fee: consultationFee,
+    status:           'waiting'
   });
 
   if (apptInsert.error) {
-    alert('Patient was created (ID: ' + newPatientCode + ') but adding them to the queue failed: ' + apptInsert.error.message);
+    const prefix = quickSelectedPatientId
+      ? 'Could not add to queue'
+      : 'Patient was created (ID: ' + displayCode + ') but adding to queue failed';
+    alert(prefix + ': ' + apptInsert.error.message);
+    if (!quickSelectedPatientId) await loadPatients();
     hideQuickWalkInForm();
-    await loadPatients();
     return;
   }
 
-  hideQuickWalkInForm();
   await loadPatients();
   await loadQueue();
-  alert(name + ' added - Patient ID ' + newPatientCode + ', Token #' + tokenNumber);
+  if (consultationFee && (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager')) {
+    await loadRevenue();
+  }
+
+  const feeNote = consultationFee ? '  |  Fee: Rs. ' + consultationFee.toLocaleString() : '';
+  alert(name + ' added — Token #' + tokenNumber + feeNote);
+
+  document.getElementById('quickName').value = '';
+  document.getElementById('quickPhone').value = '';
+  document.getElementById('quickAge').value = '';
+  document.getElementById('quickFee').value = '';
+  quickSelectedPatientId = null;
+  document.getElementById('quickSelectedInfo').style.display = 'none';
+  document.getElementById('quickNameList').classList.remove('open');
+  document.getElementById('quickName').focus();
 }
 
 // Fetches the next token number for whichever date is currently
@@ -1282,8 +1434,10 @@ async function handleAddAppointment() {
     return;
   }
 
-  hideAddAppointmentForm();
   await loadQueue();
+  ['apptTime','apptToken','apptNotes'].forEach(id => document.getElementById(id).value = '');
+  await refreshTokenForDate();
+  document.getElementById('apptPatient').focus();
 }
 
 async function loadQueue() {
@@ -1350,6 +1504,35 @@ async function updateAppointmentStatus(appointmentId, newStatus) {
   }
 }
 
+// ---------------------------------------------------------------
+// KEYBOARD FLOW HELPER
+// Takes an ordered list of field IDs and a "save" button ID. Pressing
+// Enter in any field except the last one moves focus to the next
+// field. Pressing Enter in the LAST field clicks the save button
+// instead. This lets a receptionist fill an entire form using only
+// the keyboard - no mouse needed between fields or to submit.
+// Used for the Patient form, Quick Walk-in form, and Appointment form.
+// ---------------------------------------------------------------
+function enableEnterKeyFlow(fieldIds, saveButtonId) {
+  for (let i = 0; i < fieldIds.length; i++) {
+    const field = document.getElementById(fieldIds[i]);
+    if (!field) continue;
+
+    field.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+
+      const isLastField = (i === fieldIds.length - 1);
+      if (isLastField) {
+        document.getElementById(saveButtonId).click();
+      } else {
+        const nextField = document.getElementById(fieldIds[i + 1]);
+        if (nextField) nextField.focus();
+      }
+    });
+  }
+}
+
 /* ============================================================
    SECTION 10: EVENT WIRING
    All click/change/submit handlers are attached here, once, using
@@ -1374,6 +1557,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // Patients page
   document.getElementById('showAddPatientBtn').addEventListener('click', showAddPatientForm);
   document.getElementById('savePatientBtn').addEventListener('click', handleAddPatient);
+  enableEnterKeyFlow(
+    ['patientCode', 'patientName', 'patientPhone', 'patientAge', 'patientGender', 'patientAddress'],
+    'savePatientBtn'
+  );
   document.getElementById('cancelPatientBtn').addEventListener('click', hideAddPatientForm);
   document.getElementById('patientSearch').addEventListener('input', filterPatients);
   document.getElementById('backToPatientListBtn').addEventListener('click', closePatientDetail);
@@ -1399,9 +1586,28 @@ document.addEventListener('DOMContentLoaded', function () {
   // Appointments page
   document.getElementById('showQuickWalkInBtn').addEventListener('click', showQuickWalkInForm);
   document.getElementById('saveQuickWalkInBtn').addEventListener('click', handleQuickWalkIn);
+  document.getElementById('quickName').addEventListener('input', filterQuickWalkInName);
+  document.getElementById('quickName').addEventListener('blur', function () {
+    // Delay so a click on an autocomplete item fires before the list hides
+    setTimeout(function () {
+      document.getElementById('quickNameList').classList.remove('open');
+    }, 180);
+  });
+  document.getElementById('quickNameList').addEventListener('mousedown', function (event) {
+    const item = event.target.closest('.autocomplete-item');
+    if (item) {
+      event.preventDefault(); // stop blur from firing before mousedown completes
+      selectExistingPatientForWalkIn(item.getAttribute('data-patient-id'));
+    }
+  });
+  enableEnterKeyFlow(['quickName', 'quickPhone', 'quickAge', 'quickFee', 'quickDoctor'], 'saveQuickWalkInBtn');
   document.getElementById('cancelQuickWalkInBtn').addEventListener('click', hideQuickWalkInForm);
   document.getElementById('showAddAppointmentBtn').addEventListener('click', showAddAppointmentForm);
   document.getElementById('saveAppointmentBtn').addEventListener('click', handleAddAppointment);
+  enableEnterKeyFlow(
+    ['apptPatient', 'apptDoctor', 'apptDate', 'apptTime', 'apptToken', 'apptNotes'],
+    'saveAppointmentBtn'
+  );
   document.getElementById('cancelAppointmentBtn').addEventListener('click', hideAddAppointmentForm);
   document.getElementById('apptDate').addEventListener('change', refreshTokenForDate);
 
