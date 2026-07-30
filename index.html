@@ -1,1697 +1,2375 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title id="pageDocTitle">Clinic ERP</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-/* ==========================================================
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title id="pageDocTitle">Clinic ERP</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      /* ==========================================================
    THEME: teal / medical colors, deliberately different from
    the school ERP product so this reads as its own product.
    ========================================================== */
-* { margin:0; padding:0; box-sizing:border-box; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-:root {
-  --primary:#0d9488;
-  --primary-dark:#0f766e;
-  --secondary:#06b6d4;
-  --danger:#dc2626;
-  --success:#16a34a;
-  --bg-light:#f0fdfa;
-  --card-bg:#ffffff;
-  --border-color:#d1fae5;
-  --text-dark:#134e4a;
-  --text-light:#5f8a86;
-  --sidebar-width:270px;
-}
+      :root {
+        --primary: #0d9488;
+        --primary-dark: #0f766e;
+        --secondary: #06b6d4;
+        --danger: #dc2626;
+        --success: #16a34a;
+        --bg-light: #f0fdfa;
+        --card-bg: #ffffff;
+        --border-color: #d1fae5;
+        --text-dark: #134e4a;
+        --text-light: #5f8a86;
+        --sidebar-width: 270px;
+      }
 
-body {
-  font-family:'Segoe UI','Roboto',system-ui,-apple-system,sans-serif;
-  background-color:var(--bg-light);
-  color:var(--text-dark);
-  line-height:1.6;
-}
+      body {
+        font-family:
+          "Segoe UI",
+          "Roboto",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background-color: var(--bg-light);
+        color: var(--text-dark);
+        line-height: 1.6;
+      }
 
-/* ---------- LOGIN PAGE ---------- */
-.login-container {
-  display:none; width:100%; height:100vh;
-  background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  align-items:center; justify-content:center; padding:20px;
-}
-.login-container.show { display:flex; }
+      /* ---------- LOGIN PAGE ---------- */
+      .login-container {
+        display: none;
+        width: 100%;
+        height: 100vh;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .login-container.show {
+        display: flex;
+      }
 
-.login-box {
-  background:var(--card-bg); border-radius:14px; padding:40px;
-  width:100%; max-width:400px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);
-}
-.login-header { text-align:center; margin-bottom:28px; }
-.login-logo {
-  width:60px; height:60px;
-  background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  border-radius:12px; display:flex; align-items:center; justify-content:center;
-  font-size:30px; color:white; margin:0 auto 14px;
-}
-.login-header h2 { font-size:22px; font-weight:700; }
-.login-header p { color:var(--text-light); font-size:13px; margin-top:4px; }
+      .login-box {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 40px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      }
+      .login-header {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .login-logo {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        color: white;
+        margin: 0 auto 14px;
+      }
+      .login-header h2 {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .login-header p {
+        color: var(--text-light);
+        font-size: 13px;
+        margin-top: 4px;
+      }
 
-.form-group { margin-bottom:18px; }
-.form-group label { display:block; margin-bottom:6px; font-weight:600; font-size:13px; }
-.form-group input {
-  width:100%; padding:11px; border:1px solid var(--border-color);
-  border-radius:8px; font-size:14px; font-family:inherit;
-}
-.form-group input:focus {
-  outline:none; border-color:var(--secondary);
-  box-shadow:0 0 0 3px rgba(6,182,212,0.12);
-}
+      .form-group {
+        margin-bottom: 18px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .form-group input {
+        width: 100%;
+        padding: 11px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+      .form-group input:focus {
+        outline: none;
+        border-color: var(--secondary);
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.12);
+      }
 
-.btn-full {
-  width:100%; padding:12px; border:none; border-radius:8px;
-  background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color:white; font-size:14px; font-weight:600; cursor:pointer;
-}
+      .btn-full {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-.login-message { font-size:13px; margin-top:10px; text-align:center; }
-.login-message.error { color:var(--danger); }
-.login-message.success { color:var(--success); }
+      .login-message {
+        font-size: 13px;
+        margin-top: 10px;
+        text-align: center;
+      }
+      .login-message.error {
+        color: var(--danger);
+      }
+      .login-message.success {
+        color: var(--success);
+      }
 
-/* ---------- APP LAYOUT ---------- */
-.app-container { display:none; height:100vh; }
-.app-container.show { display:flex; }
+      /* ---------- APP LAYOUT ---------- */
+      .app-container {
+        display: none;
+        height: 100vh;
+      }
+      .app-container.show {
+        display: flex;
+      }
 
-.sidebar {
-  width:var(--sidebar-width);
-  background:linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color:white; padding:22px; position:fixed; height:100vh; left:0; top:0;
-  overflow-y:auto;
-}
-.clinic-logo { display:flex; align-items:center; margin-bottom:26px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.2); }
-.clinic-logo-icon {
-  width:42px; height:42px; background:rgba(255,255,255,0.2); border-radius:10px;
-  display:flex; align-items:center; justify-content:center; font-size:22px; margin-right:12px;
-}
-.clinic-info h1 { font-size:15px; font-weight:700; }
-.clinic-info p { font-size:11px; opacity:0.85; }
+      .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(
+          180deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: white;
+        padding: 22px;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        overflow-y: auto;
+      }
+      .clinic-logo {
+        display: flex;
+        align-items: center;
+        margin-bottom: 26px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .clinic-logo-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-right: 12px;
+      }
+      .clinic-info h1 {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .clinic-info p {
+        font-size: 11px;
+        opacity: 0.85;
+      }
 
-.nav-menu { list-style:none; margin-bottom:24px; }
-.nav-item { margin-bottom:6px; }
-.nav-link {
-  display:flex; align-items:center; width:100%; padding:11px 14px;
-  color:rgba(255,255,255,0.85); border:none; background:none; border-radius:8px;
-  font-size:14px; font-weight:500; cursor:pointer; text-align:left;
-}
-.nav-link:hover, .nav-link.active { background:rgba(255,255,255,0.15); color:white; }
-.nav-link i { width:20px; margin-right:10px; text-align:center; }
+      .nav-menu {
+        list-style: none;
+        margin-bottom: 24px;
+      }
+      .nav-item {
+        margin-bottom: 6px;
+      }
+      .nav-link {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 11px 14px;
+        color: rgba(255, 255, 255, 0.85);
+        border: none;
+        background: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+      }
+      .nav-link:hover,
+      .nav-link.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+      }
+      .nav-link i {
+        width: 20px;
+        margin-right: 10px;
+        text-align: center;
+      }
 
-.logout-btn {
-  width:100%; padding:11px; background:rgba(220,38,38,0.2); color:#fca5a5;
-  border:1px solid rgba(220,38,38,0.3); border-radius:8px; cursor:pointer;
-  display:flex; align-items:center; gap:8px; font-size:14px;
-}
+      .logout-btn {
+        width: 100%;
+        padding: 11px;
+        background: rgba(220, 38, 38, 0.2);
+        color: #fca5a5;
+        border: 1px solid rgba(220, 38, 38, 0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+      }
 
-.main-content { margin-left:var(--sidebar-width); flex:1; overflow-y:auto; }
-.header {
-  background:var(--card-bg); padding:18px 30px; display:flex;
-  justify-content:space-between; align-items:center;
-  border-bottom:1px solid var(--border-color);
-}
-.header h2 { font-size:22px; font-weight:700; }
-.user-badge { display:flex; align-items:center; gap:10px; padding:8px 14px; background:var(--bg-light); border-radius:8px; }
-.user-avatar {
-  width:34px; height:34px; background:var(--secondary); border-radius:50%;
-  display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:13px;
-}
+      .main-content {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        overflow-y: auto;
+      }
+      .header {
+        background: var(--card-bg);
+        padding: 18px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .header h2 {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .user-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        background: var(--bg-light);
+        border-radius: 8px;
+      }
+      .user-avatar {
+        width: 34px;
+        height: 34px;
+        background: var(--secondary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+      }
 
-.content { padding:28px; }
-.page { display:none; }
-.page.active { display:block; }
+      .content {
+        padding: 28px;
+      }
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
 
-.card {
-  background:var(--card-bg); border-radius:12px; padding:22px;
-  border:1px solid var(--border-color); overflow-x:auto;
-}
+      .card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 22px;
+        border: 1px solid var(--border-color);
+        overflow-x: auto;
+      }
 
-table { width:100%; border-collapse:collapse; }
-th {
-  background:var(--bg-light); padding:13px 15px; text-align:left; font-weight:600;
-  font-size:12px; text-transform:uppercase; color:var(--text-dark);
-  border-bottom:2px solid var(--border-color);
-}
-td { padding:13px 15px; border-bottom:1px solid var(--border-color); font-size:14px; }
-tr:hover td { background-color:var(--bg-light); }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        background: var(--bg-light);
+        padding: 13px 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--text-dark);
+        border-bottom: 2px solid var(--border-color);
+      }
+      td {
+        padding: 13px 15px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+      }
+      tr:hover td {
+        background-color: var(--bg-light);
+      }
 
-.empty-state { text-align:center; color:var(--text-light); padding:36px 20px; font-style:italic; }
+      .empty-state {
+        text-align: center;
+        color: var(--text-light);
+        padding: 36px 20px;
+        font-style: italic;
+      }
 
-.patient-code-badge {
-  background:#ccfbf1; color:var(--primary-dark); padding:4px 10px;
-  border-radius:6px; font-size:12.5px; font-weight:700; font-family:monospace;
-}
+      .patient-code-badge {
+        background: #ccfbf1;
+        color: var(--primary-dark);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12.5px;
+        font-weight: 700;
+        font-family: monospace;
+      }
 
-.btn {
-  display:inline-flex; align-items:center; gap:7px; padding:10px 18px;
-  border-radius:8px; font-size:14px; font-weight:600; border:none; cursor:pointer;
-}
-.btn-primary { background:var(--primary); color:white; }
-.btn-secondary { background:var(--bg-light); color:var(--text-dark); border:1px solid var(--border-color); }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-secondary {
+        background: var(--bg-light);
+        color: var(--text-dark);
+        border: 1px solid var(--border-color);
+      }
 
-.form-row {
-  display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
-  gap:14px; margin-bottom:16px;
-}
-.form-row input, .form-row select {
-  width:100%; padding:10px 13px; border:1px solid var(--border-color);
-  border-radius:7px; font-size:14px; font-family:inherit;
-}
+      .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .form-row input,
+      .form-row select {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid var(--border-color);
+        border-radius: 7px;
+        font-size: 14px;
+        font-family: inherit;
+      }
 
-.search-bar { margin-bottom:20px; }
-.search-bar input {
-  width:100%; padding:12px 16px; border:1px solid var(--border-color);
-  border-radius:9px; font-size:14px;
-}
+      .search-bar {
+        margin-bottom: 20px;
+      }
+      .search-bar input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 9px;
+        font-size: 14px;
+      }
 
-label.field-label { font-size:12px; font-weight:600; display:block; margin-bottom:5px; }
+      label.field-label {
+        font-size: 12px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+      }
 
-/* ---------- AUTOCOMPLETE DROPDOWN (quick walk-in name search) ---------- */
-.autocomplete-wrapper { position:relative; }
-.autocomplete-list {
-  position:absolute; top:100%; left:0; right:0; background:var(--card-bg);
-  border:1px solid var(--border-color); border-top:none;
-  border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto;
-  z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.10); display:none;
-}
-.autocomplete-list.open { display:block; }
-.autocomplete-item {
-  padding:10px 14px; cursor:pointer; font-size:13.5px;
-  border-bottom:1px solid var(--border-color);
-}
-.autocomplete-item:last-child { border-bottom:none; }
-.autocomplete-item:hover { background:var(--bg-light); }
-.autocomplete-item strong { display:block; font-size:14px; }
-.autocomplete-item span { font-size:12px; color:var(--text-light); }
-</style>
-</head>
-<body>
-
-<!-- ============================================================
+      /* ---------- AUTOCOMPLETE DROPDOWN (quick walk-in name search) ---------- */
+      .autocomplete-wrapper {
+        position: relative;
+      }
+      .autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 220px;
+        overflow-y: auto;
+        z-index: 200;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        display: none;
+      }
+      .autocomplete-list.open {
+        display: block;
+      }
+      .autocomplete-item {
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 13.5px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .autocomplete-item:last-child {
+        border-bottom: none;
+      }
+      .autocomplete-item:hover {
+        background: var(--bg-light);
+      }
+      .autocomplete-item strong {
+        display: block;
+        font-size: 14px;
+      }
+      .autocomplete-item span {
+        font-size: 12px;
+        color: var(--text-light);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================
      LOGIN PAGE
      Shown until a session is confirmed. Generic text/branding -
      the real clinic name isn't known yet at this point, since no
      one is logged in, so we can't look it up from the database.
      ============================================================ -->
-<div class="login-container show" id="loginContainer">
-  <div class="login-box">
-    <div class="login-header">
-      <div class="login-logo"><i class="fas fa-briefcase-medical"></i></div>
-      <h2>Clinic ERP</h2>
-      <p>Sign in to your clinic account</p>
-    </div>
-    <!-- id="loginEmail" for label association (fixes the accessibility
+    <div class="login-container show" id="loginContainer">
+      <div class="login-box">
+        <div class="login-header">
+          <div class="login-logo"><i class="fas fa-briefcase-medical"></i></div>
+          <h2>Clinic ERP</h2>
+          <p>Sign in to your clinic account</p>
+        </div>
+        <!-- id="loginEmail" for label association (fixes the accessibility
          warning seen in DevTools "Issues" tab - each input now has a
          matching <label for="..."> -->
-    <form id="loginForm">
-      <div class="form-group">
-        <label for="loginEmail">Email Address</label>
-        <input id="loginEmail" type="email" required placeholder="you@clinic.com">
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginEmail">Email Address</label>
+            <input
+              id="loginEmail"
+              type="email"
+              required
+              placeholder="you@clinic.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input
+              id="loginPassword"
+              type="password"
+              required
+              placeholder="Password"
+            />
+          </div>
+          <button type="submit" class="btn-full">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </button>
+          <div id="loginMessage" class="login-message"></div>
+        </form>
       </div>
-      <div class="form-group">
-        <label for="loginPassword">Password</label>
-        <input id="loginPassword" type="password" required placeholder="Password">
-      </div>
-      <button type="submit" class="btn-full"><i class="fas fa-sign-in-alt"></i> Sign In</button>
-      <div id="loginMessage" class="login-message"></div>
-    </form>
-  </div>
-</div>
+    </div>
 
-<!-- ============================================================
+    <!-- ============================================================
      MAIN APP (hidden until login succeeds)
      ============================================================ -->
-<div class="app-container" id="appContainer">
-
-  <!-- ---------- SIDEBAR ---------- -->
-  <aside class="sidebar">
-    <div class="clinic-logo">
-      <div class="clinic-logo-icon"><i class="fas fa-briefcase-medical"></i></div>
-      <!-- Filled by setClinicBranding() after login - real clinic name
-           pulled from the database, never hardcoded. -->
-      <div class="clinic-info">
-        <h1 id="sidebarClinicName">Clinic</h1>
-        <p id="sidebarClinicSubtitle">Management System</p>
-      </div>
-    </div>
-
-    <ul class="nav-menu">
-      <li class="nav-item">
-        <button class="nav-link active" data-page="dashboard">
-          <i class="fas fa-gauge"></i><span>Dashboard</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" data-page="patients">
-          <i class="fas fa-user-injured"></i><span>Patients</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" data-page="appointments">
-          <i class="fas fa-calendar-check"></i><span>Today's Queue</span>
-        </button>
-      </li>
-    </ul>
-
-    <button class="logout-btn" id="logoutBtn">
-      <i class="fas fa-sign-out-alt"></i><span>Logout</span>
-    </button>
-  </aside>
-
-  <main class="main-content">
-    <div class="header">
-      <h2 id="pageTitle">Dashboard</h2>
-      <div class="user-badge">
-        <div class="user-avatar" id="userInitial">S</div>
-        <div>
-          <strong style="display:block; font-size:13px;" id="userName">Staff</strong>
-          <small style="color:var(--text-light);" id="userRole">Clinic Staff</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="content">
-
-      <!-- ================= DASHBOARD ================= -->
-      <div class="page active" id="page-dashboard">
-        <div style="margin-bottom:26px;">
-          <h2 style="margin-bottom:4px;">Dashboard</h2>
-          <p style="color:var(--text-light);" id="dashboardWelcome">Welcome</p>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:20px; margin-bottom:20px;">
-          <div class="card">
-            <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Total Patients</h4>
-            <p style="font-size:30px; font-weight:700; color:var(--primary);" id="totalPatients">0</p>
+    <div class="app-container" id="appContainer">
+      <!-- ---------- SIDEBAR ---------- -->
+      <aside class="sidebar">
+        <div class="clinic-logo">
+          <div class="clinic-logo-icon">
+            <i class="fas fa-briefcase-medical"></i>
           </div>
-          <!-- Hidden by default, shown only for Doctor role via
+          <!-- Filled by setClinicBranding() after login - real clinic name
+           pulled from the database, never hardcoded. -->
+          <div class="clinic-info">
+            <h1 id="sidebarClinicName">Clinic</h1>
+            <p id="sidebarClinicSubtitle">Management System</p>
+          </div>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <button class="nav-link active" data-page="dashboard">
+              <i class="fas fa-gauge"></i><span>Dashboard</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-page="patients">
+              <i class="fas fa-user-injured"></i><span>Patients</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-page="appointments">
+              <i class="fas fa-calendar-check"></i><span>Today's Queue</span>
+            </button>
+          </li>
+        </ul>
+
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+        </button>
+      </aside>
+
+      <main class="main-content">
+        <div class="header">
+          <h2 id="pageTitle">Dashboard</h2>
+          <div class="user-badge">
+            <div class="user-avatar" id="userInitial">S</div>
+            <div>
+              <strong style="display: block; font-size: 13px" id="userName"
+                >Staff</strong
+              >
+              <small style="color: var(--text-light)" id="userRole"
+                >Clinic Staff</small
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="content">
+          <!-- ================= DASHBOARD ================= -->
+          <div class="page active" id="page-dashboard">
+            <div style="margin-bottom: 26px">
+              <h2 style="margin-bottom: 4px">Dashboard</h2>
+              <p style="color: var(--text-light)" id="dashboardWelcome">
+                Welcome
+              </p>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin-bottom: 20px;
+              "
+            >
+              <div class="card">
+                <h4
+                  style="
+                    font-size: 12px;
+                    color: var(--text-light);
+                    text-transform: uppercase;
+                    margin-bottom: 8px;
+                  "
+                >
+                  Total Patients
+                </h4>
+                <p
+                  style="
+                    font-size: 30px;
+                    font-weight: 700;
+                    color: var(--primary);
+                  "
+                  id="totalPatients"
+                >
+                  0
+                </p>
+              </div>
+              <!-- Hidden by default, shown only for Doctor role via
                applyRoleVisibility(). Data itself is also protected at the
                database level by RLS on visits.fee_amount, so this card
                being hidden is a UI convenience, not the actual security. -->
-          <div class="card" id="revenueCard" style="display:none;">
-            <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Revenue This Month</h4>
-            <p style="font-size:30px; font-weight:700; color:var(--success);" id="revenueThisMonth">Rs. 0</p>
-          </div>
-        </div>
+              <div class="card" id="revenueCard" style="display: none">
+                <h4
+                  style="
+                    font-size: 12px;
+                    color: var(--text-light);
+                    text-transform: uppercase;
+                    margin-bottom: 8px;
+                  "
+                >
+                  Revenue This Month
+                </h4>
+                <p
+                  style="
+                    font-size: 30px;
+                    font-weight: 700;
+                    color: var(--success);
+                  "
+                  id="revenueThisMonth"
+                >
+                  Rs. 0
+                </p>
+              </div>
+            </div>
 
-        <!-- Common Conditions card: counts visits.diagnosis_category over
+            <!-- Common Conditions card: counts visits.diagnosis_category over
              the current calendar month, ranked most-to-least frequent.
              Filled by loadCommonConditions(). Relies on doctors actually
              picking a category on the visit form - older visits recorded
              before this feature existed won't have one and are excluded. -->
-        <div class="card">
-          <h4 style="margin-bottom:14px;">Most Common Conditions This Month</h4>
-          <table>
-            <thead>
-              <tr><th>Condition</th><th>Cases</th></tr>
-            </thead>
-            <tbody id="commonConditionsList">
-              <tr><td colspan="2" class="empty-state">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ================= PATIENTS ================= -->
-      <div class="page" id="page-patients">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:12px;">
-          <div>
-            <h2 style="margin-bottom:4px;">Patient Registry</h2>
-            <p style="color:var(--text-light);">Search by name or patient ID</p>
+            <div class="card">
+              <h4 style="margin-bottom: 14px">
+                Most Common Conditions This Month
+              </h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Condition</th>
+                    <th>Cases</th>
+                  </tr>
+                </thead>
+                <tbody id="commonConditionsList">
+                  <tr>
+                    <td colspan="2" class="empty-state">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <button class="btn btn-primary" id="showAddPatientBtn">
-            <i class="fas fa-user-plus"></i> Register New Patient
-          </button>
-        </div>
 
-        <!-- Add Patient form. Patient ID auto-fills from generate_patient_code()
+          <!-- ================= PATIENTS ================= -->
+          <div class="page" id="page-patients">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 26px;
+                flex-wrap: wrap;
+                gap: 12px;
+              "
+            >
+              <div>
+                <h2 style="margin-bottom: 4px">Patient Registry</h2>
+                <p style="color: var(--text-light)">
+                  Search by name or patient ID
+                </p>
+              </div>
+              <button class="btn btn-primary" id="showAddPatientBtn">
+                <i class="fas fa-user-plus"></i> Register New Patient
+              </button>
+            </div>
+
+            <!-- Add Patient form. Patient ID auto-fills from generate_patient_code()
              (a database function, see schema.sql) but can be typed over. -->
-        <div id="addPatientForm" class="card" style="display:none; margin-bottom:22px;">
-          <div class="form-row">
-            <div>
-              <label class="field-label" for="patientCode">Patient ID</label>
-              <input id="patientCode" placeholder="Auto-generating...">
+            <div
+              id="addPatientForm"
+              class="card"
+              style="display: none; margin-bottom: 22px"
+            >
+              <div class="form-row">
+                <div>
+                  <label class="field-label" for="patientCode"
+                    >Patient ID</label
+                  >
+                  <input id="patientCode" placeholder="Auto-generating..." />
+                </div>
+                <div>
+                  <label class="field-label" for="patientName"
+                    >Full Name *</label
+                  >
+                  <input id="patientName" placeholder="Full name" />
+                </div>
+                <div>
+                  <label class="field-label" for="patientPhone">Phone</label>
+                  <input id="patientPhone" placeholder="03xx-xxxxxxx" />
+                </div>
+                <div>
+                  <label class="field-label" for="patientAge">Age</label>
+                  <input id="patientAge" type="number" placeholder="Age" />
+                </div>
+                <div>
+                  <label class="field-label" for="patientGender">Gender</label>
+                  <select id="patientGender">
+                    <option value="">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="patientAddress"
+                    >Address</label
+                  >
+                  <input id="patientAddress" placeholder="Address (optional)" />
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <button class="btn btn-primary" id="savePatientBtn">
+                  <i class="fas fa-check"></i> Save Patient
+                </button>
+                <button class="btn btn-secondary" id="cancelPatientBtn">
+                  Cancel
+                </button>
+              </div>
             </div>
-            <div>
-              <label class="field-label" for="patientName">Full Name *</label>
-              <input id="patientName" placeholder="Full name">
-            </div>
-            <div>
-              <label class="field-label" for="patientPhone">Phone</label>
-              <input id="patientPhone" placeholder="03xx-xxxxxxx">
-            </div>
-            <div>
-              <label class="field-label" for="patientAge">Age</label>
-              <input id="patientAge" type="number" placeholder="Age">
-            </div>
-            <div>
-              <label class="field-label" for="patientGender">Gender</label>
-              <select id="patientGender">
-                <option value="">Select</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label class="field-label" for="patientAddress">Address</label>
-              <input id="patientAddress" placeholder="Address (optional)">
-            </div>
-          </div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-primary" id="savePatientBtn"><i class="fas fa-check"></i> Save Patient</button>
-            <button class="btn btn-secondary" id="cancelPatientBtn">Cancel</button>
-          </div>
-        </div>
 
-        <div class="search-bar">
-          <input id="patientSearch" placeholder="Search by name or patient ID (e.g. P-2026-001)...">
-        </div>
-
-        <div class="card" id="patientsTableCard">
-          <table>
-            <thead>
-              <tr><th>Patient ID</th><th>Full Name</th><th>Phone</th><th>Age</th><th>Gender</th><th>Registered</th></tr>
-            </thead>
-            <tbody id="patientsList">
-              <tr><td colspan="6" class="empty-state">Loading patients...</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Patient Detail view: hidden until a patient row is clicked. -->
-        <div id="patientDetailView" style="display:none;">
-          <div style="margin:20px 0 16px;">
-            <button class="btn btn-secondary" id="backToPatientListBtn"><i class="fas fa-arrow-left"></i> Back to Patient List</button>
-          </div>
-          <div class="card" style="margin-bottom:20px;">
-            <h3 id="detailPatientName" style="margin-bottom:4px;"></h3>
-            <p id="detailPatientMeta" style="color:var(--text-light); font-size:13px;"></p>
-          </div>
-
-          <div class="card" style="margin-bottom:20px;">
-            <h4 style="margin-bottom:14px;">Log New Visit</h4>
-            <div class="form-row">
-              <div>
-                <label class="field-label" for="visitDoctor">Doctor *</label>
-                <select id="visitDoctor"></select>
-              </div>
-              <div>
-                <label class="field-label" for="visitDate">Visit Date</label>
-                <input id="visitDate" type="date">
-              </div>
-              <div>
-                <label class="field-label" for="visitFollowUp">Follow-up Date</label>
-                <input id="visitFollowUp" type="date">
-              </div>
+            <div class="search-bar">
+              <input
+                id="patientSearch"
+                placeholder="Search by name or patient ID (e.g. P-2026-001)..."
+              />
             </div>
-            <div class="form-row" style="grid-template-columns:1fr 1fr 1fr;">
-              <div>
-                <label class="field-label" for="visitDiagnosisCategory">Diagnosis Category</label>
-                <select id="visitDiagnosisCategory">
-                  <option value="">Select (optional)</option>
-                  <option value="Flu / Viral Fever">Flu / Viral Fever</option>
-                  <option value="Common Cold">Common Cold</option>
-                  <option value="Hypertension">Hypertension</option>
-                  <option value="Diabetes">Diabetes</option>
-                  <option value="Gastroenteritis / Stomach Issues">Gastroenteritis / Stomach Issues</option>
-                  <option value="Skin Infection">Skin Infection</option>
-                  <option value="Respiratory Infection">Respiratory Infection</option>
-                  <option value="Allergy">Allergy</option>
-                  <option value="Injury / Wound">Injury / Wound</option>
-                  <option value="Routine Checkup">Routine Checkup</option>
-                  <option value="Other">Other</option>
-                </select>
+
+            <div class="card" id="patientsTableCard">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Full Name</th>
+                    <th>Phone</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Registered</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="patientsList">
+                  <tr>
+                    <td colspan="7" class="empty-state">Loading patients...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Patient Detail view: hidden until a patient row is clicked. -->
+            <div id="patientDetailView" style="display: none">
+              <div style="margin: 20px 0 16px">
+                <button class="btn btn-secondary" id="backToPatientListBtn">
+                  <i class="fas fa-arrow-left"></i> Back to Patient List
+                </button>
               </div>
-              <div>
-                <label class="field-label" for="visitDiagnosis">Diagnosis Detail (free text)</label>
-                <input id="visitDiagnosis" placeholder="e.g. Viral fever, Hypertension...">
+              <div class="card" style="margin-bottom: 20px">
+                <h3 id="detailPatientName" style="margin-bottom: 4px"></h3>
+                <p
+                  id="detailPatientMeta"
+                  style="color: var(--text-light); font-size: 13px"
+                ></p>
               </div>
-              <div>
-                <label class="field-label" for="visitPrescription">Prescription</label>
-                <input id="visitPrescription" placeholder="Medicines / instructions">
-              </div>
-              <!-- Hidden by default. Only unhidden by JS (applyRoleVisibility)
+
+              <div class="card" style="margin-bottom: 20px">
+                <h4 style="margin-bottom: 14px">Log New Visit</h4>
+                <div class="form-row">
+                  <div>
+                    <label class="field-label" for="visitDoctor"
+                      >Doctor *</label
+                    >
+                    <select id="visitDoctor"></select>
+                  </div>
+                  <div>
+                    <label class="field-label" for="visitDate"
+                      >Visit Date</label
+                    >
+                    <input id="visitDate" type="date" />
+                  </div>
+                  <div>
+                    <label class="field-label" for="visitFollowUp"
+                      >Follow-up Date</label
+                    >
+                    <input id="visitFollowUp" type="date" />
+                  </div>
+                </div>
+                <div
+                  class="form-row"
+                  style="grid-template-columns: 1fr 1fr 1fr"
+                >
+                  <div>
+                    <label class="field-label" for="visitDiagnosisCategory"
+                      >Diagnosis Category</label
+                    >
+                    <select id="visitDiagnosisCategory">
+                      <option value="">Select (optional)</option>
+                      <option value="Flu / Viral Fever">
+                        Flu / Viral Fever
+                      </option>
+                      <option value="Common Cold">Common Cold</option>
+                      <option value="Hypertension">Hypertension</option>
+                      <option value="Diabetes">Diabetes</option>
+                      <option value="Gastroenteritis / Stomach Issues">
+                        Gastroenteritis / Stomach Issues
+                      </option>
+                      <option value="Skin Infection">Skin Infection</option>
+                      <option value="Respiratory Infection">
+                        Respiratory Infection
+                      </option>
+                      <option value="Allergy">Allergy</option>
+                      <option value="Injury / Wound">Injury / Wound</option>
+                      <option value="Routine Checkup">Routine Checkup</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="field-label" for="visitDiagnosis"
+                      >Diagnosis Detail (free text)</label
+                    >
+                    <input
+                      id="visitDiagnosis"
+                      placeholder="e.g. Viral fever, Hypertension..."
+                    />
+                  </div>
+                  <div>
+                    <label class="field-label" for="visitPrescription"
+                      >Prescription</label
+                    >
+                    <input
+                      id="visitPrescription"
+                      placeholder="Medicines / instructions"
+                    />
+                  </div>
+                  <!-- Hidden by default. Only unhidden by JS (applyRoleVisibility)
                    if the logged-in user's role is Doctor. Even if someone
                    forces this visible via DevTools, the actual fee_amount
                    data still won't come back from Supabase for a non-doctor -
                    the RLS policy on visits enforces that at the database
                    level, not this element's visibility. -->
-              <div id="visitFeeWrapper" style="display:none;">
-                <label class="field-label" for="visitFee">Fee (Rs.) - Doctor only</label>
-                <input id="visitFee" type="number" step="0.01" placeholder="e.g. 1500">
+                  <div id="visitFeeWrapper" style="display: none">
+                    <label class="field-label" for="visitFee"
+                      >Fee (Rs.) - Doctor only</label
+                    >
+                    <input
+                      id="visitFee"
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g. 1500"
+                    />
+                  </div>
+                </div>
+                <button class="btn btn-primary" id="saveVisitBtn">
+                  <i class="fas fa-notes-medical"></i> Save Visit
+                </button>
+              </div>
+
+              <div class="card">
+                <h4 style="margin-bottom: 14px">Visit History</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Doctor</th>
+                      <th>Diagnosis</th>
+                      <th>Prescription</th>
+                      <th>Follow-up</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="visitHistoryList">
+                    <tr>
+                      <td colspan="6" class="empty-state">No visits yet</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-            <button class="btn btn-primary" id="saveVisitBtn"><i class="fas fa-notes-medical"></i> Save Visit</button>
           </div>
 
-          <div class="card">
-            <h4 style="margin-bottom:14px;">Visit History</h4>
-            <table>
-              <thead>
-                <tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Prescription</th><th>Follow-up</th><th></th></tr>
-              </thead>
-              <tbody id="visitHistoryList">
-                <tr><td colspan="6" class="empty-state">No visits yet</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+          <!-- ================= TODAY'S QUEUE / APPOINTMENTS ================= -->
+          <div class="page" id="page-appointments">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 26px;
+                flex-wrap: wrap;
+                gap: 12px;
+              "
+            >
+              <div>
+                <h2 style="margin-bottom: 4px">Today's Queue</h2>
+                <p style="color: var(--text-light)" id="queueDateLabel">
+                  Today's appointments
+                </p>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                  align-items: center;
+                "
+              >
+                <button
+                  class="btn btn-primary"
+                  id="showQuickWalkInBtn"
+                  style="background: var(--success)"
+                >
+                  <i class="fas fa-bolt"></i> New Walk-in Patient
+                </button>
+                <button class="btn btn-primary" id="showAddAppointmentBtn">
+                  <i class="fas fa-plus"></i> Add Appointment (existing patient)
+                </button>
+                <button
+                  class="btn btn-secondary"
+                  id="undoLastWalkInBtn"
+                  style="display: none; border-color: #e74c3c; color: #e74c3c"
+                >
+                  <i class="fas fa-undo"></i> Undo Last Walk-in
+                </button>
+              </div>
+            </div>
 
-      <!-- ================= TODAY'S QUEUE / APPOINTMENTS ================= -->
-      <div class="page" id="page-appointments">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:12px;">
-          <div>
-            <h2 style="margin-bottom:4px;">Today's Queue</h2>
-            <p style="color:var(--text-light);" id="queueDateLabel">Today's appointments</p>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-primary" id="showQuickWalkInBtn" style="background:var(--success);">
-              <i class="fas fa-bolt"></i> New Walk-in Patient
-            </button>
-            <button class="btn btn-primary" id="showAddAppointmentBtn">
-              <i class="fas fa-plus"></i> Add Appointment (existing patient)
-            </button>
-          </div>
-        </div>
+            <!-- Manager-only: set clinic default consultation fee once -->
+            <div
+              id="defaultFeeCard"
+              class="card"
+              style="
+                display: none;
+                margin-bottom: 16px;
+                padding: 14px 18px;
+                background: var(--bg-light);
+                border: 1.5px dashed var(--primary);
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  flex-wrap: wrap;
+                "
+              >
+                <span
+                  style="
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--primary);
+                  "
+                  ><i class="fas fa-tag"></i> Default Consultation Fee</span
+                >
+                <input
+                  id="defaultFeeInput"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 500"
+                  style="
+                    width: 130px;
+                    padding: 6px 10px;
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                    font-size: 14px;
+                  "
+                />
+                <button
+                  class="btn btn-primary"
+                  id="saveDefaultFeeBtn"
+                  style="padding: 6px 16px; font-size: 13px"
+                >
+                  <i class="fas fa-save"></i> Save Default
+                </button>
+                <span
+                  id="defaultFeeStatus"
+                  style="font-size: 12.5px; color: var(--text-light)"
+                ></span>
+              </div>
+              <p
+                style="
+                  margin-top: 6px;
+                  font-size: 11.5px;
+                  color: var(--text-light);
+                "
+              >
+                Set once — auto-fills the fee field for every new walk-in.
+                Reception staff can still override it per patient.
+              </p>
+            </div>
 
-        <!-- Quick Walk-in form: name + phone only. Saving this does TWO
+            <!-- Quick Walk-in form: name + phone only. Saving this does TWO
              things at once - creates a new patient row (with an
              auto-generated patient_code, same as the full registry form)
              AND immediately books them into today's queue with the next
              token number. This is the fast path for a receptionist facing
              a line of walk-ins, instead of filling the full patient form
              first and then a separate appointment form after. -->
-        <div id="quickWalkInForm" class="card" style="display:none; margin-bottom:22px; border-color:var(--success);">
-          <h4 style="margin-bottom:14px; color:var(--success);"><i class="fas fa-bolt"></i> Quick Walk-in</h4>
-          <div class="form-row">
-            <div>
-              <label class="field-label" for="quickName">Name * <span style="font-weight:400; color:var(--text-light);">(type to search existing or register new)</span></label>
-              <div class="autocomplete-wrapper">
-                <input id="quickName" placeholder="Type name..." autocomplete="off">
-                <div id="quickNameList" class="autocomplete-list"></div>
+            <div
+              id="quickWalkInForm"
+              class="card"
+              style="
+                display: none;
+                margin-bottom: 22px;
+                border-color: var(--success);
+              "
+            >
+              <h4 style="margin-bottom: 14px; color: var(--success)">
+                <i class="fas fa-bolt"></i> Quick Walk-in
+              </h4>
+              <div class="form-row">
+                <div>
+                  <label class="field-label" for="quickName"
+                    >Name *
+                    <span style="font-weight: 400; color: var(--text-light)"
+                      >(type to search existing or register new)</span
+                    ></label
+                  >
+                  <div class="autocomplete-wrapper">
+                    <input
+                      id="quickName"
+                      placeholder="Type name..."
+                      autocomplete="off"
+                    />
+                    <div id="quickNameList" class="autocomplete-list"></div>
+                  </div>
+                  <p
+                    id="quickSelectedInfo"
+                    style="
+                      display: none;
+                      margin-top: 6px;
+                      font-size: 12.5px;
+                      color: var(--success);
+                      font-weight: 600;
+                    "
+                  ></p>
+                </div>
+                <div>
+                  <label class="field-label" for="quickPhone">Phone</label>
+                  <input
+                    id="quickPhone"
+                    placeholder="03xx-xxxxxxx (optional)"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="quickAge">Age</label>
+                  <input
+                    id="quickAge"
+                    type="number"
+                    placeholder="e.g. 35"
+                    min="0"
+                    max="150"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="quickComplaint"
+                    >Condition / Complaint</label
+                  >
+                  <input
+                    id="quickComplaint"
+                    placeholder="e.g. Fever, Back pain, Follow-up"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="quickDoctor">Doctor *</label>
+                  <select id="quickDoctor"></select>
+                </div>
+                <div>
+                  <label class="field-label" for="quickFee"
+                    >Consultation Fee (Rs.)</label
+                  >
+                  <input
+                    id="quickFee"
+                    type="number"
+                    placeholder="e.g. 1000"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="quickDate">Date</label>
+                  <input id="quickDate" type="date" />
+                </div>
               </div>
-              <p id="quickSelectedInfo" style="display:none; margin-top:6px; font-size:12.5px; color:var(--success); font-weight:600;"></p>
-            </div>
-            <div>
-              <label class="field-label" for="quickPhone">Phone</label>
-              <input id="quickPhone" placeholder="03xx-xxxxxxx (optional)">
-            </div>
-            <div>
-              <label class="field-label" for="quickAge">Age</label>
-              <input id="quickAge" type="number" placeholder="e.g. 35" min="0" max="150">
-            </div>
-            <div>
-              <label class="field-label" for="quickComplaint">Condition / Complaint</label>
-              <input id="quickComplaint" placeholder="e.g. Fever, Back pain, Follow-up">
-            </div>
-            <div>
-              <label class="field-label" for="quickDoctor">Doctor *</label>
-              <select id="quickDoctor"></select>
-            </div>
-            <div>
-              <label class="field-label" for="quickFee">
-                Consultation Fee (Rs.)
-                <button type="button" id="quickFeeDefaultBtn"
-                  style="display:none; margin-left:8px; font-size:11px; font-weight:600;
-                         background:none; border:1px solid var(--primary); color:var(--primary);
-                         border-radius:4px; padding:1px 7px; cursor:pointer; vertical-align:middle;"
-                  title="Save this fee as the clinic default (auto-fills next time)">
-                  &#128190; Set default
+              <p
+                style="
+                  color: var(--text-light);
+                  font-size: 12.5px;
+                  margin-bottom: 14px;
+                "
+              >
+                Typing a name shows matching patients — click to select (no
+                duplicate record). Unrecognised names create a new patient
+                automatically.
+              </p>
+              <div style="display: flex; gap: 10px">
+                <button
+                  class="btn btn-primary"
+                  id="saveQuickWalkInBtn"
+                  style="background: var(--success)"
+                >
+                  <i class="fas fa-check"></i> Add to Queue
                 </button>
-              </label>
-              <input id="quickFee" type="number" placeholder="e.g. 1000" min="0">
-              <p id="quickFeeDefaultHint" style="margin-top:4px; font-size:11.5px; color:var(--text-light);"></p>
+                <button class="btn btn-secondary" id="cancelQuickWalkInBtn">
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-          <p style="color:var(--text-light); font-size:12.5px; margin-bottom:14px;">
-            Typing a name shows matching patients — click to select (no duplicate record). Unrecognised names create a new patient automatically.
-          </p>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-primary" id="saveQuickWalkInBtn" style="background:var(--success);"><i class="fas fa-check"></i> Add to Queue</button>
-            <button class="btn btn-secondary" id="cancelQuickWalkInBtn">Cancel</button>
-          </div>
-        </div>
 
-        <!-- Add Appointment form. Token number auto-fills via
+            <!-- Add Appointment form. Token number auto-fills via
              generate_token_number() (database function), restarting
              from 1 each day - re-fetched if the date is changed. -->
-        <div id="addAppointmentForm" class="card" style="display:none; margin-bottom:22px;">
-          <div class="form-row">
-            <div>
-              <label class="field-label" for="apptPatient">Patient *</label>
-              <select id="apptPatient"></select>
+            <div
+              id="addAppointmentForm"
+              class="card"
+              style="display: none; margin-bottom: 22px"
+            >
+              <div class="form-row">
+                <div>
+                  <label class="field-label" for="apptPatient">Patient *</label>
+                  <select id="apptPatient"></select>
+                </div>
+                <div>
+                  <label class="field-label" for="apptDoctor">Doctor *</label>
+                  <select id="apptDoctor"></select>
+                </div>
+                <div>
+                  <label class="field-label" for="apptDate">Date *</label>
+                  <input id="apptDate" type="date" />
+                </div>
+                <div>
+                  <label class="field-label" for="apptTime">Time *</label>
+                  <input id="apptTime" type="time" />
+                </div>
+                <div>
+                  <label class="field-label" for="apptToken"
+                    >Token # (auto)</label
+                  >
+                  <input
+                    id="apptToken"
+                    type="number"
+                    placeholder="Auto-generating..."
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="apptNotes">Notes</label>
+                  <input
+                    id="apptNotes"
+                    placeholder="Reason for visit (optional)"
+                  />
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <button class="btn btn-primary" id="saveAppointmentBtn">
+                  <i class="fas fa-check"></i> Save Appointment
+                </button>
+                <button class="btn btn-secondary" id="cancelAppointmentBtn">
+                  Cancel
+                </button>
+              </div>
             </div>
-            <div>
-              <label class="field-label" for="apptDoctor">Doctor *</label>
-              <select id="apptDoctor"></select>
-            </div>
-            <div>
-              <label class="field-label" for="apptDate">Date *</label>
-              <input id="apptDate" type="date">
-            </div>
-            <div>
-              <label class="field-label" for="apptTime">Time *</label>
-              <input id="apptTime" type="time">
-            </div>
-            <div>
-              <label class="field-label" for="apptToken">Token # (auto)</label>
-              <input id="apptToken" type="number" placeholder="Auto-generating...">
-            </div>
-            <div>
-              <label class="field-label" for="apptNotes">Notes</label>
-              <input id="apptNotes" placeholder="Reason for visit (optional)">
+
+            <div class="card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Token</th>
+                    <th>Time</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="queueList">
+                  <tr>
+                    <td colspan="5" class="empty-state">
+                      Loading today's queue...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-primary" id="saveAppointmentBtn"><i class="fas fa-check"></i> Save Appointment</button>
-            <button class="btn btn-secondary" id="cancelAppointmentBtn">Cancel</button>
-          </div>
         </div>
-
-        <div class="card">
-          <table>
-            <thead>
-              <tr><th>Token</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th></tr>
-            </thead>
-            <tbody id="queueList">
-              <tr><td colspan="5" class="empty-state">Loading today's queue...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
+      </main>
     </div>
-  </main>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-/* ============================================================
-   SECTION 1: SUPABASE CONNECTION
-   These are the real credentials for the clinic-erp Supabase
-   project. Do NOT replace with Nizamix's credentials - separate
-   product, separate database.
-   ============================================================ */
-const supabaseClient = window.supabase.createClient(
-  'https://rbgcyrlaoygugizuxste.supabase.co',
-  'sb_publishable_R7qmvPIOIkWN0lu-oUDc8g_OBcVo59X'
-);
-
-/* ============================================================
-   SECTION 2: GLOBAL STATE
-   These variables hold "what we currently know" so we don't
-   re-query the database constantly. They get filled in after
-   login and after each data load.
-   ============================================================ */
-let CURRENT_CLINIC_ID = null;   // resolved from the logged-in user's staff row
-let CURRENT_STAFF_ROLE = '';    // used only to decide what to SHOW in the UI -
-                                 // the real security boundary for fee_amount is
-                                 // the RLS policy on the visits table itself,
-                                 // not this variable. A non-doctor hiding this
-                                 // element still can't fetch the data even if
-                                 // they inspect the page or call the API directly.
-let allPatients = [];           // full patient list cache, for instant search
-let staffCache = [];            // full staff list cache, for dropdowns
-let currentDetailPatientId = null; // which patient's detail view is open
-let currentVisitsCache = [];    // the visit list currently shown, for the Print button
-let quickSelectedPatientId = null; // set when user picks an existing patient in the walk-in autocomplete
-
-/* ============================================================
-   SECTION 3: LOGIN / SESSION / CLINIC BRANDING
-   ============================================================ */
-
-// Runs once when the page loads. If a session already exists
-// (user was already logged in), skip straight to the app.
-async function checkSession() {
-  const { data } = await supabaseClient.auth.getSession();
-  if (data.session) {
-    const ok = await resolveClinicContext();
-    if (ok) {
-      showApp();
-      await loadAllData();
-    }
-  } else {
-    showLogin();
-  }
-}
-
-// Handles the login form submit.
-async function handleLogin(event) {
-  event.preventDefault();
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  const msgEl = document.getElementById('loginMessage');
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    msgEl.className = 'login-message error';
-    msgEl.textContent = error.message;
-    return;
-  }
-
-  if (data.session) {
-    msgEl.className = 'login-message success';
-    msgEl.textContent = 'Login successful!';
-    const ok = await resolveClinicContext();
-    if (ok) {
-      showApp();
-      await loadAllData();
-    }
-  }
-}
-
-// Logs out and returns to the login screen.
-async function handleLogout() {
-  await supabaseClient.auth.signOut();
-  CURRENT_CLINIC_ID = null;
-  showLogin();
-}
-
-// Looks up which clinic the logged-in user belongs to (via their
-// own row in the "staff" table), then loads that clinic's real
-// name so the sidebar/header can display it. Returns true/false
-// so callers know whether it's safe to proceed to showApp().
-async function resolveClinicContext() {
-  const { data: userData } = await supabaseClient.auth.getUser();
-  const user = userData.user;
-  if (!user) return false;
-
-  const { data: staffRow, error: staffError } = await supabaseClient
-    .from('staff')
-    .select('clinic_id, full_name, role')
-    .eq('id', user.id)
-    .single();
-
-  if (staffError || !staffRow) {
-    alert('Your account is not linked to a clinic yet. Contact your administrator.');
-    await supabaseClient.auth.signOut();
-    showLogin();
-    return false;
-  }
-
-  CURRENT_CLINIC_ID = staffRow.clinic_id;
-  CURRENT_STAFF_ROLE = staffRow.role || '';
-  document.getElementById('userName').textContent = staffRow.full_name || 'Staff';
-  document.getElementById('userRole').textContent = staffRow.role || 'Clinic Staff';
-  document.getElementById('userInitial').textContent = (staffRow.full_name || 'S').charAt(0).toUpperCase();
-
-  const { data: clinicRow } = await supabaseClient
-    .from('clinics')
-    .select('name')
-    .eq('id', CURRENT_CLINIC_ID)
-    .single();
-
-  setClinicBranding(clinicRow ? clinicRow.name : 'Clinic');
-  return true;
-}
-
-// Writes the real clinic name into every place branding shows up.
-function setClinicBranding(clinicName) {
-  const parts = clinicName.trim().split(' ');
-  document.getElementById('sidebarClinicName').textContent = parts[0] || 'Clinic';
-  document.getElementById('sidebarClinicSubtitle').textContent = parts.slice(1).join(' ') || 'Management System';
-  document.getElementById('dashboardWelcome').textContent = 'Welcome to ' + clinicName;
-  document.getElementById('pageDocTitle').textContent = clinicName + ' - Clinic ERP';
-}
-
-function showLogin() {
-  document.getElementById('loginContainer').classList.add('show');
-  document.getElementById('appContainer').classList.remove('show');
-}
-function showApp() {
-  document.getElementById('loginContainer').classList.remove('show');
-  document.getElementById('appContainer').classList.add('show');
-}
-
-/* ============================================================
-   SECTION 4: PAGE NAVIGATION
-   Sidebar buttons use data-page="..." attributes instead of
-   inline onclick, and we read that attribute here. This avoids
-   ever needing to build JS strings with embedded quotes for
-   navigation (a source of fragile bugs earlier).
-   ============================================================ */
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + pageId).classList.add('active');
-
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.querySelector('.nav-link[data-page="' + pageId + '"]').classList.add('active');
-
-  const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue" };
-  document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
-}
-
-/* ============================================================
-   SECTION 5: LOAD ALL DATA (called once after login)
-   ============================================================ */
-async function loadAllData() {
-  await loadPatients();
-  await loadStaffCache();
-  await populateAppointmentDropdowns();
-  await loadQueue();
-  await loadCommonConditions();
-  applyRoleVisibility();
-  if (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager') {
-    await loadRevenue();
-  }
-}
-
-// Shows/hides UI elements based on the logged-in user's role. This is a
-// convenience for a cleaner interface, NOT the actual security boundary -
-// fee_amount is protected by an RLS policy on the visits table itself,
-// so even if this function were skipped entirely, a non-doctor still
-// could not retrieve real fee data from Supabase.
-function applyRoleVisibility() {
-  const isDoctor   = CURRENT_STAFF_ROLE === 'Doctor';
-  const canSeeRev  = CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager';
-  const isManager  = CURRENT_STAFF_ROLE === 'Manager';
-  document.getElementById('visitFeeWrapper').style.display    = isDoctor  ? 'block' : 'none';
-  document.getElementById('revenueCard').style.display        = canSeeRev ? 'block' : 'none';
-  document.getElementById('quickFeeDefaultBtn').style.display = isManager ? 'inline-block' : 'none';
-}
-
-// Sums revenue for the current calendar month from two sources:
-//   1. visits.fee_amount           - fees logged when a doctor records a full visit
-//   2. appointments.consultation_fee - fees entered at reception via Quick Walk-in
-// Visible to Doctor and Manager roles (see applyRoleVisibility).
-async function loadRevenue() {
-  const now = new Date();
-  const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
-
-  const [visitResult, apptResult] = await Promise.all([
-    supabaseClient
-      .from('visits')
-      .select('fee_amount')
-      .eq('clinic_id', CURRENT_CLINIC_ID)
-      .gte('visit_date', monthStart),
-    supabaseClient
-      .from('appointments')
-      .select('consultation_fee')
-      .eq('clinic_id', CURRENT_CLINIC_ID)
-      .gte('appointment_date', monthStart)
-  ]);
-
-  if (visitResult.error) console.error('Failed to load visit revenue:', visitResult.error);
-  if (apptResult.error)  console.error('Failed to load appt revenue:', apptResult.error);
-
-  let total = 0;
-  for (const row of (visitResult.data || [])) {
-    if (row.fee_amount        != null) total += Number(row.fee_amount);
-  }
-  for (const row of (apptResult.data || [])) {
-    if (row.consultation_fee  != null) total += Number(row.consultation_fee);
-  }
-  document.getElementById('revenueThisMonth').textContent = 'Rs. ' + total.toLocaleString();
-}
-
-// Counts visits.diagnosis_category for the current calendar month,
-// grouped and ranked most-frequent first. Only visits with a category
-// selected are counted - free-text-only diagnoses (older visits, or a
-// doctor who picked "Other") are excluded from this ranking on purpose,
-// since counting inconsistent free text would give a misleading number.
-async function loadCommonConditions() {
-  const now = new Date();
-  const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
-
-  const result = await supabaseClient
-    .from('visits')
-    .select('diagnosis_category')
-    .eq('clinic_id', CURRENT_CLINIC_ID)
-    .gte('visit_date', monthStart)
-    .not('diagnosis_category', 'is', null);
-
-  if (result.error) {
-    document.getElementById('commonConditionsList').innerHTML =
-      '<tr><td colspan="2" class="empty-state" style="color:#dc2626;">Error: ' + result.error.message + '</td></tr>';
-    return;
-  }
-
-  const rows = result.data || [];
-  const counts = {};
-  for (const row of rows) {
-    const category = row.diagnosis_category;
-    counts[category] = (counts[category] || 0) + 1;
-  }
-
-  const ranked = Object.keys(counts)
-    .map(function (category) { return { category: category, count: counts[category] }; })
-    .sort(function (a, b) { return b.count - a.count; });
-
-  if (ranked.length === 0) {
-    document.getElementById('commonConditionsList').innerHTML =
-      '<tr><td colspan="2" class="empty-state">No categorized visits yet this month</td></tr>';
-    return;
-  }
-
-  let html = '';
-  for (const item of ranked) {
-    html += '<tr>';
-    html += '<td style="font-weight:500;">' + item.category + '</td>';
-    html += '<td>' + item.count + '</td>';
-    html += '</tr>';
-  }
-  document.getElementById('commonConditionsList').innerHTML = html;
-}
-
-/* ============================================================
-   SECTION 6: PATIENTS
-   ============================================================ */
-
-async function loadPatients() {
-  const { data, error } = await supabaseClient
-    .from('patients')
-    .select('*')
-    .eq('clinic_id', CURRENT_CLINIC_ID)
-    .order('registered_at', { ascending: false });
-
-  if (error) {
-    document.getElementById('patientsList').innerHTML =
-      '<tr><td colspan="6" class="empty-state" style="color:#dc2626;">Error: ' + error.message + '</td></tr>';
-    return;
-  }
-
-  allPatients = data || [];
-  document.getElementById('totalPatients').textContent = allPatients.length;
-  renderPatientsTable(allPatients);
-}
-
-// Builds the patient table rows. Each row has a data-patient-id
-// attribute (read by a click listener) instead of an inline
-// onclick with a template string - simpler, and avoids any
-// quote-escaping issues.
-function renderPatientsTable(list) {
-  const tbody = document.getElementById('patientsList');
-  if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No patients found</td></tr>';
-    return;
-  }
-  let html = '';
-  for (const p of list) {
-    html += '<tr class="patient-row" data-patient-id="' + p.id + '" style="cursor:pointer;">';
-    html += '<td><span class="patient-code-badge">' + p.patient_code + '</span></td>';
-    html += '<td style="font-weight:500;">' + p.full_name + '</td>';
-    html += '<td>' + (p.phone || 'N/A') + '</td>';
-    html += '<td>' + (p.age != null ? p.age : 'N/A') + '</td>';
-    html += '<td>' + (p.gender || 'N/A') + '</td>';
-    html += '<td style="color:var(--text-light); font-size:13px;">' + new Date(p.registered_at).toLocaleDateString() + '</td>';
-    html += '</tr>';
-  }
-  tbody.innerHTML = html;
-}
-
-function filterPatients() {
-  const q = document.getElementById('patientSearch').value.trim().toLowerCase();
-  if (!q) { renderPatientsTable(allPatients); return; }
-  const filtered = allPatients.filter(p =>
-    p.full_name.toLowerCase().includes(q) || p.patient_code.toLowerCase().includes(q)
-  );
-  renderPatientsTable(filtered);
-}
-
-async function showAddPatientForm() {
-  document.getElementById('addPatientForm').style.display = 'block';
-  const { data, error } = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
-  document.getElementById('patientCode').value = error ? '' : data;
-  document.getElementById('patientName').focus();
-}
-
-function hideAddPatientForm() {
-  document.getElementById('addPatientForm').style.display = 'none';
-  ['patientCode','patientName','patientPhone','patientAge','patientGender','patientAddress']
-    .forEach(id => document.getElementById(id).value = '');
-}
-
-// After a successful save, the form stays open (doesn't close) - it just
-// clears itself, fetches a fresh auto-generated patient ID, and puts the
-// keyboard focus back on the Name field. This is what lets a receptionist
-// register several patients in a row without ever touching the mouse.
-async function resetPatientFormForNextEntry() {
-  ['patientName','patientPhone','patientAge','patientGender','patientAddress']
-    .forEach(id => document.getElementById(id).value = '');
-
-  const { data, error } = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
-  document.getElementById('patientCode').value = error ? '' : data;
-  document.getElementById('patientName').focus();
-}
-
-async function handleAddPatient() {
-  const code = document.getElementById('patientCode').value.trim();
-  const name = document.getElementById('patientName').value.trim();
-
-  if (!code || !name) {
-    alert('Patient ID and Full Name are required.');
-    return;
-  }
-
-  const { error } = await supabaseClient.from('patients').insert({
-    clinic_id: CURRENT_CLINIC_ID,
-    patient_code: code,
-    full_name: name,
-    phone: document.getElementById('patientPhone').value.trim() || null,
-    age: document.getElementById('patientAge').value || null,
-    gender: document.getElementById('patientGender').value || null,
-    address: document.getElementById('patientAddress').value.trim() || null
-  });
-
-  if (error) {
-    if (error.message.includes('patients_clinic_id_patient_code_key')) {
-      alert('That Patient ID is already in use. Choose a different one.');
-    } else {
-      alert('Error saving patient: ' + error.message);
-    }
-    return;
-  }
-
-  await loadPatients();
-  await resetPatientFormForNextEntry();
-}
-
-/* ============================================================
-   SECTION 7: PATIENT DETAIL / VISIT HISTORY
-   ============================================================ */
-
-async function openPatientDetail(patientId) {
-  const patient = allPatients.find(p => p.id === patientId);
-  if (!patient) return;
-
-  currentDetailPatientId = patientId;
-  document.getElementById('patientsTableCard').style.display = 'none';
-  document.querySelector('.search-bar').style.display = 'none';
-  document.getElementById('patientDetailView').style.display = 'block';
-
-  document.getElementById('detailPatientName').textContent = patient.full_name + ' (' + patient.patient_code + ')';
-  document.getElementById('detailPatientMeta').textContent =
-    (patient.age ? patient.age + ' yrs, ' : '') + (patient.gender || '') + ' - ' + (patient.phone || 'No phone on file');
-
-  const doctors = staffCache.filter(s => s.role === 'Doctor');
-  const doctorList = doctors.length ? doctors : staffCache;
-  document.getElementById('visitDoctor').innerHTML =
-    doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
-  document.getElementById('visitDate').value = todayStr();
-
-  await loadVisitHistory(patientId);
-}
-
-function closePatientDetail() {
-  document.getElementById('patientDetailView').style.display = 'none';
-  document.getElementById('patientsTableCard').style.display = 'block';
-  document.querySelector('.search-bar').style.display = 'block';
-  currentDetailPatientId = null;
-}
-
-async function loadVisitHistory(patientId) {
-  const { data, error } = await supabaseClient
-    .from('visits')
-    .select('visit_date, diagnosis, prescription, follow_up_date, staff(full_name)')
-    .eq('clinic_id', CURRENT_CLINIC_ID)
-    .eq('patient_id', patientId)
-    .order('visit_date', { ascending: false });
-
-  if (error) {
-    document.getElementById('visitHistoryList').innerHTML =
-      '<tr><td colspan="6" class="empty-state" style="color:#dc2626;">Error: ' + error.message + '</td></tr>';
-    return;
-  }
-
-  currentVisitsCache = data || [];
-  if (currentVisitsCache.length === 0) {
-    document.getElementById('visitHistoryList').innerHTML = '<tr><td colspan="6" class="empty-state">No visits recorded yet</td></tr>';
-    return;
-  }
-
-  let html = '';
-  for (let i = 0; i < currentVisitsCache.length; i++) {
-    const v = currentVisitsCache[i];
-    html += '<tr>';
-    html += '<td style="font-family:monospace;">' + v.visit_date + '</td>';
-    html += '<td>' + (v.staff ? v.staff.full_name : 'N/A') + '</td>';
-    html += '<td>' + (v.diagnosis || '-') + '</td>';
-    html += '<td>' + (v.prescription || '-') + '</td>';
-    html += '<td>' + (v.follow_up_date || '-') + '</td>';
-    // data-visit-index instead of passing the object inline - this is
-    // exactly the pattern that avoided the earlier syntax-error bug.
-    html += '<td><button class="btn btn-secondary print-visit-btn" data-visit-index="' + i + '" style="padding:6px 12px; font-size:12.5px;"><i class="fas fa-print"></i> Print</button></td>';
-    html += '</tr>';
-  }
-  document.getElementById('visitHistoryList').innerHTML = html;
-}
-
-async function handleAddVisit() {
-  const doctorId = document.getElementById('visitDoctor').value;
-  const date = document.getElementById('visitDate').value;
-
-  if (!doctorId || !date) {
-    alert('Doctor and Visit Date are required.');
-    return;
-  }
-
-  const feeInput = document.getElementById('visitFee');
-  const feeValue = feeInput && feeInput.value ? Number(feeInput.value) : null;
-
-  const { error } = await supabaseClient.from('visits').insert({
-    clinic_id: CURRENT_CLINIC_ID,
-    patient_id: currentDetailPatientId,
-    doctor_id: doctorId,
-    visit_date: date,
-    diagnosis_category: document.getElementById('visitDiagnosisCategory').value || null,
-    diagnosis: document.getElementById('visitDiagnosis').value.trim() || null,
-    prescription: document.getElementById('visitPrescription').value.trim() || null,
-    follow_up_date: document.getElementById('visitFollowUp').value || null,
-    fee_amount: feeValue
-  });
-
-  if (error) {
-    alert('Error saving visit: ' + error.message);
-    return;
-  }
-
-  ['visitDiagnosisCategory','visitDiagnosis','visitPrescription','visitFollowUp','visitFee'].forEach(id => document.getElementById(id).value = '');
-  await loadVisitHistory(currentDetailPatientId);
-}
-
-// Opens a print-formatted prescription slip in a new tab and triggers
-// the browser's native print dialog (free, works offline, no PDF library).
-//
-// HOW THE LIVE SERVER BUG WAS DIAGNOSED AND WHY THIS FIX WORKS
-// --------------------------------------------------------------
-// VS Code Live Server injects its live-reload script by doing a plain-text
-// search of the raw file bytes and replacing the first occurrence of the
-// closing-body-tag pattern it finds. When this file had that closing tag
-// pattern inside a JavaScript string literal (inside the script block),
-// Live Server found THAT occurrence first and injected a script element
-// there - directly inside a JS string, producing a syntax error that crashed
-// the entire script block, which is why no function including handleLogin
-// existed at all in the browser.
-//
-// Every rewrite of the print section failed because every version still
-// contained that pattern somewhere in the script block. Removing the print
-// button entirely made the pattern disappear, so login worked again.
-//
-// Two-part fix:
-//   1. Blob URL - the popup HTML is built at runtime and opened as a blob:
-//      URL. Live Server only injects into files it serves from disk; a
-//      blob: URL is never read from disk so Live Server cannot touch it.
-//   2. Split closing tags - in the lines array below, the closing body and
-//      html tags are written as two string pieces joined at runtime
-//      ('</' + 'body>') so that pattern never appears literally in the
-//      source file inside the script block, giving Live Server nothing to
-//      match on even if it scans this area.
-function printPrescription(index) {
-  const visit = currentVisitsCache[index];
-  if (!visit) return;
-  const patient = allPatients.find(p => p.id === currentDetailPatientId);
-  const clinicName = document.getElementById('sidebarClinicName').textContent
-    + ' ' + document.getElementById('sidebarClinicSubtitle').textContent;
-
-  const patientName   = patient ? patient.full_name   : '';
-  const patientCode   = patient ? patient.patient_code : '';
-  const patientAge    = (patient && patient.age)    ? patient.age           : 'N/A';
-  const patientGender = (patient && patient.gender) ? patient.gender        : 'N/A';
-  const doctorName    = visit.staff                 ? visit.staff.full_name : 'N/A';
-
-  // Closing tags are written as concatenated halves so the literal pattern
-  // does not appear anywhere inside this script block - see comment above.
-  const CLOSE_STYLE = '</' + 'style>';
-  const CLOSE_HEAD  = '</' + 'head>';
-  const OPEN_BODY   = '<' + 'body>';
-  const CLOSE_BODY  = '</' + 'body>';
-  const CLOSE_HTML  = '</' + 'html>';
-
-  const lines = [
-    '<!DOCTYPE html>',
-    '<html lang="en">',
-    '<head>',
-    '<meta charset="UTF-8">',
-    '<title>Prescription - ' + patientName + '</title>',
-    '<style>',
-    'body{font-family:Segoe UI,sans-serif;padding:40px;color:#134e4a;max-width:700px;margin:0 auto;}',
-    '.hdr{text-align:center;border-bottom:3px solid #0d9488;padding-bottom:16px;margin-bottom:24px;}',
-    '.hdr h1{color:#0d9488;font-size:22px;margin:0 0 4px;}',
-    '.hdr p{font-size:12px;color:#5f8a86;margin:0;}',
-    '.row{display:flex;justify-content:space-between;margin-bottom:14px;font-size:14px;}',
-    '.sec{margin-bottom:20px;}',
-    '.sec h3{font-size:12px;text-transform:uppercase;color:#5f8a86;margin-bottom:6px;}',
-    '.sec p{font-size:16px;white-space:pre-wrap;margin:0;}',
-    '#rxPrintBtn{display:block;margin:36px auto 0;padding:10px 28px;',
-    '  background:#0d9488;color:#fff;border:none;border-radius:8px;',
-    '  font-size:15px;font-weight:600;cursor:pointer;}',
-    '@media print{#rxPrintBtn{display:none;}}',
-    CLOSE_STYLE,
-    CLOSE_HEAD,
-    OPEN_BODY,
-    '<div class="hdr"><h1>' + clinicName + '</h1><p>Prescription Slip</p></div>',
-    '<div class="row">',
-    '  <span><strong>Patient:</strong> ' + patientName + ' (' + patientCode + ')</span>',
-    '  <span><strong>Date:</strong> ' + visit.visit_date + '</span>',
-    '</div>',
-    '<div class="row">',
-    '  <span><strong>Age / Gender:</strong> ' + patientAge + ' / ' + patientGender + '</span>',
-    '  <span><strong>Doctor:</strong> ' + doctorName + '</span>',
-    '</div>',
-    '<div class="sec"><h3>Diagnosis</h3><p>' + (visit.diagnosis || 'Not recorded') + '</p></div>',
-    '<div class="sec"><h3>Prescription (Rx)</h3><p>' + (visit.prescription || 'Not recorded') + '</p></div>',
-    visit.follow_up_date
-      ? '<div class="sec"><h3>Follow-up Date</h3><p>' + visit.follow_up_date + '</p></div>'
-      : '',
-    '<button id="rxPrintBtn" onclick="window.print()">Print / Save as PDF</button>',
-    CLOSE_BODY,
-    CLOSE_HTML
-  ];
-
-  const html = lines.join('\n');
-  const blob = new Blob([html], { type: 'text/html' });
-  const url  = URL.createObjectURL(blob);
-  window.open(url, '_blank', 'width=680,height=820');
-  // Blob URL is not revoked here - revoking before the popup finishes
-  // loading would blank the window. The browser frees it when the tab closes.
-}
-
-/* ============================================================
-   SECTION 8: STAFF CACHE (used by appointment + visit dropdowns)
-   ============================================================ */
-async function loadStaffCache() {
-  const { data, error } = await supabaseClient
-    .from('staff')
-    .select('id, full_name, role')
-    .eq('clinic_id', CURRENT_CLINIC_ID);
-
-  if (error) { console.error('Failed to load staff:', error); return; }
-  staffCache = data || [];
-}
-
-/* ============================================================
-   SECTION 9: APPOINTMENTS / TODAY'S QUEUE
-   ============================================================ */
-
-function todayStr() {
-  return new Date().toISOString().split('T')[0];
-}
-
-async function populateAppointmentDropdowns() {
-  document.getElementById('apptPatient').innerHTML = allPatients
-    .map(p => '<option value="' + p.id + '">' + p.full_name + ' (' + p.patient_code + ')</option>').join('');
-
-  const doctors = staffCache.filter(s => s.role === 'Doctor');
-  const doctorList = doctors.length ? doctors : staffCache;
-  document.getElementById('apptDoctor').innerHTML =
-    doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + (s.role ? ' - ' + s.role : '') + '</option>').join('');
-}
-
-async function showAddAppointmentForm() {
-  document.getElementById('addAppointmentForm').style.display = 'block';
-  const today = todayStr();
-  document.getElementById('apptDate').value = today;
-  await populateAppointmentDropdowns();
-  await refreshTokenForDate();
-}
-
-function hideAddAppointmentForm() {
-  document.getElementById('addAppointmentForm').style.display = 'none';
-  ['apptToken','apptNotes'].forEach(id => document.getElementById(id).value = '');
-}
-
-// ---------------------------------------------------------------
-// QUICK WALK-IN: name + phone only, creates the patient AND books
-// today's appointment in one action. This is the fast path for a
-// receptionist facing a line of walk-ins - no need to open the full
-// patient registry form first, then a separate appointment form after.
-// ---------------------------------------------------------------
-
-// ── Default consultation fee (stored in localStorage per clinic) ──────────
-// Manager sets it once; every walk-in auto-fills from it.
-// Any staff can still override the fee for an individual patient.
-
-function defaultFeeKey() {
-  return 'clinic_default_fee_' + CURRENT_CLINIC_ID;
-}
-
-function getDefaultFee() {
-  const val = localStorage.getItem(defaultFeeKey());
-  return val ? Number(val) : null;
-}
-
-function saveDefaultFee(fee) {
-  if (fee && !isNaN(fee) && Number(fee) > 0) {
-    localStorage.setItem(defaultFeeKey(), String(Number(fee)));
-    updateDefaultFeeHint();
-  }
-}
-
-function updateDefaultFeeHint() {
-  const hint = document.getElementById('quickFeeDefaultHint');
-  if (!hint) return;
-  const stored = getDefaultFee();
-  hint.textContent = stored ? 'Default: Rs. ' + stored.toLocaleString() + ' (auto-filled)' : '';
-}
-
-async function showQuickWalkInForm() {
-  document.getElementById('quickWalkInForm').style.display = 'block';
-  quickSelectedPatientId = null;
-  document.getElementById('quickSelectedInfo').style.display = 'none';
-  document.getElementById('quickSelectedInfo').textContent = '';
-  document.getElementById('quickNameList').classList.remove('open');
-  // Auto-fill fee from stored default so receptionist doesn't retype every time
-  const storedFee = getDefaultFee();
-  document.getElementById('quickFee').value = storedFee ? storedFee : '';
-  updateDefaultFeeHint();
-  // Show/hide "Set default" button depending on role
-  const isManager = CURRENT_STAFF_ROLE === 'Manager';
-  document.getElementById('quickFeeDefaultBtn').style.display = isManager ? 'inline-block' : 'none';
-  const doctors = staffCache.filter(s => s.role === 'Doctor');
-  const doctorList = doctors.length ? doctors : staffCache;
-  document.getElementById('quickDoctor').innerHTML =
-    doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
-  document.getElementById('quickName').focus();
-}
-
-function hideQuickWalkInForm() {
-  document.getElementById('quickWalkInForm').style.display = 'none';
-  document.getElementById('quickName').value = '';
-  document.getElementById('quickPhone').value = '';
-  document.getElementById('quickAge').value = '';
-  document.getElementById('quickComplaint').value = '';
-  // Keep fee at default so next walk-in auto-fills again
-  const storedFee = getDefaultFee();
-  document.getElementById('quickFee').value = storedFee ? storedFee : '';
-  document.getElementById('quickNameList').classList.remove('open');
-  document.getElementById('quickSelectedInfo').style.display = 'none';
-  quickSelectedPatientId = null;
-}
-
-// Live name autocomplete for the Quick Walk-in form.
-// Searches allPatients (already in memory) as the user types.
-// Showing matches lets the receptionist pick an existing patient
-// instead of accidentally creating a duplicate.
-function filterQuickWalkInName() {
-  const query = document.getElementById('quickName').value.trim().toLowerCase();
-  const list  = document.getElementById('quickNameList');
-
-  // Clear any prior selection when the user edits the name field
-  if (quickSelectedPatientId) {
-    quickSelectedPatientId = null;
-    document.getElementById('quickSelectedInfo').style.display = 'none';
-  }
-
-  if (!query) {
-    list.classList.remove('open');
-    list.innerHTML = '';
-    return;
-  }
-
-  const matches = allPatients.filter(p =>
-    p.full_name.toLowerCase().includes(query)
-  );
-
-  if (matches.length === 0) {
-    list.classList.remove('open');
-    list.innerHTML = '';
-    return;
-  }
-
-  list.innerHTML = matches.map(function (p) {
-    const parts = [p.patient_code];
-    if (p.age)    parts.push(p.age + ' yrs');
-    if (p.gender) parts.push(p.gender);
-    if (p.phone)  parts.push(p.phone);
-    const meta = parts.join(' | ');
-    return '<div class="autocomplete-item" data-patient-id="' + p.id + '">'
-      + '<strong>' + p.full_name + '</strong>'
-      + '<span>' + meta + '</span>'
-      + '</div>';
-  }).join('');
-  list.classList.add('open');
-}
-
-// Called when user clicks a suggestion in the dropdown.
-// Fills in the form fields from the selected patient's existing data
-// and marks them as "selected" so handleQuickWalkIn skips patient creation.
-function selectExistingPatientForWalkIn(patientId) {
-  const patient = allPatients.find(p => p.id === patientId);
-  if (!patient) return;
-  quickSelectedPatientId = patientId;
-  document.getElementById('quickName').value  = patient.full_name;
-  document.getElementById('quickPhone').value = patient.phone || '';
-  document.getElementById('quickAge').value   = patient.age != null ? patient.age : '';
-  document.getElementById('quickNameList').classList.remove('open');
-  const info = document.getElementById('quickSelectedInfo');
-  const meta = [patient.patient_code, patient.age ? patient.age + ' yrs' : null, patient.gender].filter(Boolean).join(' · ');
-  info.textContent = '✓ Existing patient: ' + meta;
-  info.style.display = 'block';
-}
-
-// Runs in sequence: optionally create a new patient, then book the
-// appointment. Uses quickSelectedPatientId when set (existing patient path)
-// to skip patient creation entirely.
-async function handleQuickWalkIn() {
-  const name      = document.getElementById('quickName').value.trim();
-  const phone     = document.getElementById('quickPhone').value.trim();
-  const ageVal    = document.getElementById('quickAge').value;
-  const feeVal    = document.getElementById('quickFee').value;
-  const complaint = document.getElementById('quickComplaint').value.trim();
-  const doctorId  = document.getElementById('quickDoctor').value;
-
-  if (!name || !doctorId) {
-    alert('Patient name and Doctor are required.');
-    return;
-  }
-
-  const consultationFee = feeVal ? Number(feeVal) : null;
-  const age             = ageVal ? Number(ageVal)  : null;
-
-  let patientId;
-  let displayCode;
-
-  if (quickSelectedPatientId) {
-    // Existing patient selected - no new record needed
-    patientId   = quickSelectedPatientId;
-    displayCode = (allPatients.find(p => p.id === patientId) || {}).patient_code || '';
-  } else {
-    // New patient - generate ID and create the record
-    const codeResult = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
-    if (codeResult.error) {
-      alert('Error generating patient ID: ' + codeResult.error.message);
-      return;
-    }
-    displayCode = codeResult.data;
-
-    const patientInsert = await supabaseClient.from('patients').insert({
-      clinic_id:    CURRENT_CLINIC_ID,
-      patient_code: displayCode,
-      full_name:    name,
-      phone:        phone || null,
-      age:          age
-    }).select().single();
-
-    if (patientInsert.error) {
-      alert('Error creating patient: ' + patientInsert.error.message);
-      return;
-    }
-    patientId = patientInsert.data.id;
-  }
-
-  const today = todayStr();
-  const tokenResult = await supabaseClient.rpc('generate_token_number', {
-    p_clinic_id: CURRENT_CLINIC_ID,
-    p_date: today
-  });
-  const tokenNumber = tokenResult.error ? null : tokenResult.data;
-
-  const now = new Date();
-  const currentTime = now.toTimeString().slice(0, 5);
-
-  const apptInsert = await supabaseClient.from('appointments').insert({
-    clinic_id:        CURRENT_CLINIC_ID,
-    patient_id:       patientId,
-    doctor_id:        doctorId,
-    appointment_date: today,
-    appointment_time: currentTime,
-    token_number:     tokenNumber,
-    consultation_fee: consultationFee,
-    chief_complaint:  complaint || null,
-    status:           'waiting'
-  });
-
-  if (apptInsert.error) {
-    const prefix = quickSelectedPatientId
-      ? 'Could not add to queue'
-      : 'Patient was created (ID: ' + displayCode + ') but adding to queue failed';
-    alert(prefix + ': ' + apptInsert.error.message);
-    if (!quickSelectedPatientId) await loadPatients();
-    hideQuickWalkInForm();
-    return;
-  }
-
-  await loadPatients();
-  await loadQueue();
-  if (consultationFee && (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager')) {
-    await loadRevenue();
-  }
-
-  const feeNote = consultationFee ? '  |  Fee: Rs. ' + consultationFee.toLocaleString() : '';
-  alert(name + ' added — Token #' + tokenNumber + feeNote);
-
-  document.getElementById('quickName').value = '';
-  document.getElementById('quickPhone').value = '';
-  document.getElementById('quickAge').value = '';
-  document.getElementById('quickComplaint').value = '';
-  // Restore default fee for next patient — don't clear to blank
-  const storedFee = getDefaultFee();
-  document.getElementById('quickFee').value = storedFee ? storedFee : '';
-  quickSelectedPatientId = null;
-  document.getElementById('quickSelectedInfo').style.display = 'none';
-  document.getElementById('quickNameList').classList.remove('open');
-  document.getElementById('quickName').focus();
-}
-
-// Fetches the next token number for whichever date is currently
-// selected. Called both when the form opens and whenever the date
-// input changes, so the token always matches the correct day.
-async function refreshTokenForDate() {
-  const selectedDate = document.getElementById('apptDate').value;
-  if (!selectedDate) return;
-  const { data, error } = await supabaseClient.rpc('generate_token_number', {
-    p_clinic_id: CURRENT_CLINIC_ID,
-    p_date: selectedDate
-  });
-  document.getElementById('apptToken').value = error ? '' : data;
-}
-
-async function handleAddAppointment() {
-  const patientId = document.getElementById('apptPatient').value;
-  const doctorId = document.getElementById('apptDoctor').value;
-  const date = document.getElementById('apptDate').value;
-  const time = document.getElementById('apptTime').value;
-
-  if (!patientId || !doctorId || !date || !time) {
-    alert('Patient, Doctor, Date, and Time are required.');
-    return;
-  }
-
-  const tokenVal = document.getElementById('apptToken').value;
-  const { error } = await supabaseClient.from('appointments').insert({
-    clinic_id: CURRENT_CLINIC_ID,
-    patient_id: patientId,
-    doctor_id: doctorId,
-    appointment_date: date,
-    appointment_time: time,
-    token_number: tokenVal ? parseInt(tokenVal) : null,
-    notes: document.getElementById('apptNotes').value.trim() || null,
-    status: 'scheduled'
-  });
-
-  if (error) {
-    alert('Error saving appointment: ' + error.message);
-    return;
-  }
-
-  await loadQueue();
-  ['apptTime','apptToken','apptNotes'].forEach(id => document.getElementById(id).value = '');
-  await refreshTokenForDate();
-  document.getElementById('apptPatient').focus();
-}
-
-async function loadQueue() {
-  const { data, error } = await supabaseClient
-    .from('appointments')
-    .select('id, appointment_time, token_number, status, patients(full_name, patient_code), staff(full_name)')
-    .eq('clinic_id', CURRENT_CLINIC_ID)
-    .eq('appointment_date', todayStr())
-    .order('token_number', { ascending: true, nullsFirst: false })
-    .order('appointment_time', { ascending: true });
-
-  if (error) {
-    document.getElementById('queueList').innerHTML =
-      '<tr><td colspan="5" class="empty-state" style="color:#dc2626;">Error: ' + error.message + '</td></tr>';
-    return;
-  }
-
-  const queue = data || [];
-  const dateLabel = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
-  document.getElementById('queueDateLabel').textContent = queue.length + ' appointment(s) - ' + dateLabel;
-
-  if (queue.length === 0) {
-    document.getElementById('queueList').innerHTML = '<tr><td colspan="5" class="empty-state">No appointments today</td></tr>';
-    return;
-  }
-
-  const statusBg = { scheduled:'#e0f2fe', waiting:'#fef3c7', in_progress:'#dbeafe', completed:'#dcfce7', cancelled:'#fee2e2', no_show:'#fee2e2' };
-  const statusFg = { scheduled:'#0369a1', waiting:'#92400e', in_progress:'#1e40af', completed:'#166534', cancelled:'#991b1b', no_show:'#991b1b' };
-  const statusOptions = ['scheduled','waiting','in_progress','completed','cancelled','no_show'];
-
-  let html = '';
-  for (const a of queue) {
-    const patientName = a.patients ? a.patients.full_name : 'Unknown';
-    const patientCode = a.patients ? a.patients.patient_code : '';
-    const doctorName = a.staff ? a.staff.full_name : 'Unassigned';
-    const timeShort = a.appointment_time ? a.appointment_time.slice(0,5) : '';
-
-    let selectHtml = '<select class="status-select" data-appt-id="' + a.id + '" style="padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:' + statusBg[a.status] + '; color:' + statusFg[a.status] + '; font-weight:600; font-size:12.5px; text-transform:capitalize;">';
-    for (const s of statusOptions) {
-      selectHtml += '<option value="' + s + '"' + (s === a.status ? ' selected' : '') + '>' + s.replace('_',' ') + '</option>';
-    }
-    selectHtml += '</select>';
-
-    html += '<tr>';
-    html += '<td>' + (a.token_number != null ? a.token_number : '-') + '</td>';
-    html += '<td style="font-family:monospace;">' + timeShort + '</td>';
-    html += '<td style="font-weight:500;">' + patientName + ' <span style="color:var(--text-light); font-size:12px;">(' + patientCode + ')</span></td>';
-    html += '<td>' + doctorName + '</td>';
-    html += '<td>' + selectHtml + '</td>';
-    html += '</tr>';
-  }
-  document.getElementById('queueList').innerHTML = html;
-}
-
-async function updateAppointmentStatus(appointmentId, newStatus) {
-  const { error } = await supabaseClient
-    .from('appointments')
-    .update({ status: newStatus })
-    .eq('id', appointmentId);
-
-  if (error) {
-    alert('Error updating status: ' + error.message);
-    await loadQueue();
-  }
-}
-
-// ---------------------------------------------------------------
-// KEYBOARD FLOW HELPER
-// Takes an ordered list of field IDs and a "save" button ID. Pressing
-// Enter in any field except the last one moves focus to the next
-// field. Pressing Enter in the LAST field clicks the save button
-// instead. This lets a receptionist fill an entire form using only
-// the keyboard - no mouse needed between fields or to submit.
-// Used for the Patient form, Quick Walk-in form, and Appointment form.
-// ---------------------------------------------------------------
-function enableEnterKeyFlow(fieldIds, saveButtonId) {
-  for (let i = 0; i < fieldIds.length; i++) {
-    const field = document.getElementById(fieldIds[i]);
-    if (!field) continue;
-
-    field.addEventListener('keydown', function (event) {
-      if (event.key !== 'Enter') return;
-      event.preventDefault();
-
-      const isLastField = (i === fieldIds.length - 1);
-      if (isLastField) {
-        document.getElementById(saveButtonId).click();
-      } else {
-        const nextField = document.getElementById(fieldIds[i + 1]);
-        if (nextField) nextField.focus();
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      /* ============================================================
+         SECTION 1: SUPABASE CONNECTION
+         These are the real credentials for the clinic-erp Supabase
+         project. Do NOT replace with Nizamix's credentials - separate
+         product, separate database.
+         ============================================================ */
+      const supabaseClient = window.supabase.createClient(
+        'https://rbgcyrlaoygugizuxste.supabase.co',
+        'sb_publishable_R7qmvPIOIkWN0lu-oUDc8g_OBcVo59X'
+      );
+
+      /* ============================================================
+         SECTION 2: GLOBAL STATE
+         These variables hold "what we currently know" so we don't
+         re-query the database constantly. They get filled in after
+         login and after each data load.
+         ============================================================ */
+      let CURRENT_CLINIC_ID = null;   // resolved from the logged-in user's staff row
+      let CURRENT_STAFF_ROLE = '';    // used only to decide what to SHOW in the UI -
+                                       // the real security boundary for fee_amount is
+                                       // the RLS policy on the visits table itself,
+                                       // not this variable. A non-doctor hiding this
+                                       // element still can't fetch the data even if
+                                       // they inspect the page or call the API directly.
+      let allPatients = [];           // full patient list cache, for instant search
+      let staffCache = [];            // full staff list cache, for dropdowns
+      let currentDetailPatientId = null; // which patient's detail view is open
+      let currentVisitsCache = [];    // the visit list currently shown, for the Print button
+      let quickSelectedPatientId = null; // set when user picks an existing patient in the walk-in autocomplete
+      let lastWalkIn = null; // { patientId, apptId, isNew } — used by Undo Last Walk-in
+
+      /* ============================================================
+         SECTION 3: LOGIN / SESSION / CLINIC BRANDING
+         ============================================================ */
+
+      // Runs once when the page loads. If a session already exists
+      // (user was already logged in), skip straight to the app.
+      async function checkSession() {
+        const { data } = await supabaseClient.auth.getSession();
+        if (data.session) {
+          const ok = await resolveClinicContext();
+          if (ok) {
+            showApp();
+            await loadAllData();
+          }
+        } else {
+          showLogin();
+        }
       }
-    });
-  }
-}
 
-/* ============================================================
-   SECTION 10: EVENT WIRING
-   All click/change/submit handlers are attached here, once, using
-   addEventListener - not inline onclick="..." attributes. This is
-   the main structural change from before: it removes every place
-   where a JS string had to be built and injected into HTML, which
-   is what caused the earlier syntax-error bug.
-   ============================================================ */
-document.addEventListener('DOMContentLoaded', function () {
+      // Handles the login form submit.
+      async function handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const msgEl = document.getElementById('loginMessage');
 
-  // Login form
-  document.getElementById('loginForm').addEventListener('submit', handleLogin);
-  document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-  // Sidebar navigation
-  document.querySelectorAll('.nav-link').forEach(function (link) {
-    link.addEventListener('click', function () {
-      showPage(link.getAttribute('data-page'));
-    });
-  });
+        if (error) {
+          msgEl.className = 'login-message error';
+          msgEl.textContent = error.message;
+          return;
+        }
 
-  // Patients page
-  document.getElementById('showAddPatientBtn').addEventListener('click', showAddPatientForm);
-  document.getElementById('savePatientBtn').addEventListener('click', handleAddPatient);
-  enableEnterKeyFlow(
-    ['patientCode', 'patientName', 'patientPhone', 'patientAge', 'patientGender', 'patientAddress'],
-    'savePatientBtn'
-  );
-  document.getElementById('cancelPatientBtn').addEventListener('click', hideAddPatientForm);
-  document.getElementById('patientSearch').addEventListener('input', filterPatients);
-  document.getElementById('backToPatientListBtn').addEventListener('click', closePatientDetail);
-  document.getElementById('saveVisitBtn').addEventListener('click', handleAddVisit);
+        if (data.session) {
+          msgEl.className = 'login-message success';
+          msgEl.textContent = 'Login successful!';
+          const ok = await resolveClinicContext();
+          if (ok) {
+            showApp();
+            await loadAllData();
+          }
+        }
+      }
 
-  // Clicking a patient row opens their detail view. Clicking a Print
-  // button inside the visit history table prints that visit. Both are
-  // handled with one delegated listener on the whole document, reading
-  // data-* attributes instead of inline onclick strings.
-  document.addEventListener('click', function (event) {
-    const patientRow = event.target.closest('.patient-row');
-    if (patientRow) {
-      openPatientDetail(patientRow.getAttribute('data-patient-id'));
-      return;
-    }
-    const printBtn = event.target.closest('.print-visit-btn');
-    if (printBtn) {
-      printPrescription(parseInt(printBtn.getAttribute('data-visit-index')));
-      return;
-    }
-  });
+      // Logs out and returns to the login screen.
+      async function handleLogout() {
+        await supabaseClient.auth.signOut();
+        CURRENT_CLINIC_ID = null;
+        showLogin();
+      }
 
-  // Appointments page
-  document.getElementById('showQuickWalkInBtn').addEventListener('click', showQuickWalkInForm);
-  document.getElementById('saveQuickWalkInBtn').addEventListener('click', handleQuickWalkIn);
-  document.getElementById('quickName').addEventListener('input', filterQuickWalkInName);
-  document.getElementById('quickName').addEventListener('blur', function () {
-    // Delay so a click on an autocomplete item fires before the list hides
-    setTimeout(function () {
-      document.getElementById('quickNameList').classList.remove('open');
-    }, 180);
-  });
-  document.getElementById('quickNameList').addEventListener('mousedown', function (event) {
-    const item = event.target.closest('.autocomplete-item');
-    if (item) {
-      event.preventDefault(); // stop blur from firing before mousedown completes
-      selectExistingPatientForWalkIn(item.getAttribute('data-patient-id'));
-    }
-  });
-  enableEnterKeyFlow(['quickName', 'quickPhone', 'quickAge', 'quickComplaint', 'quickFee', 'quickDoctor'], 'saveQuickWalkInBtn');
-  document.getElementById('cancelQuickWalkInBtn').addEventListener('click', hideQuickWalkInForm);
-  document.getElementById('quickFeeDefaultBtn').addEventListener('click', function () {
-    const fee = document.getElementById('quickFee').value;
-    if (!fee || isNaN(fee) || Number(fee) <= 0) {
-      alert('Enter a fee amount first, then click Set default.');
-      return;
-    }
-    saveDefaultFee(fee);
-    alert('Default fee set to Rs. ' + Number(fee).toLocaleString() + '. It will auto-fill for every new walk-in.');
-  });
-  document.getElementById('showAddAppointmentBtn').addEventListener('click', showAddAppointmentForm);
-  document.getElementById('saveAppointmentBtn').addEventListener('click', handleAddAppointment);
-  enableEnterKeyFlow(
-    ['apptPatient', 'apptDoctor', 'apptDate', 'apptTime', 'apptToken', 'apptNotes'],
-    'saveAppointmentBtn'
-  );
-  document.getElementById('cancelAppointmentBtn').addEventListener('click', hideAddAppointmentForm);
-  document.getElementById('apptDate').addEventListener('change', refreshTokenForDate);
+      // Looks up which clinic the logged-in user belongs to (via their
+      // own row in the "staff" table), then loads that clinic's real
+      // name so the sidebar/header can display it. Returns true/false
+      // so callers know whether it's safe to proceed to showApp().
+      async function resolveClinicContext() {
+        const { data: userData } = await supabaseClient.auth.getUser();
+        const user = userData.user;
+        if (!user) return false;
 
-  // Status dropdowns in the queue table are created dynamically, so we
-  // use event delegation (listen on the table body, check what was
-  // actually changed) instead of attaching a listener to elements that
-  // don't exist yet at page-load time.
-  document.getElementById('queueList').addEventListener('change', function (event) {
-    const select = event.target.closest('.status-select');
-    if (select) {
-      updateAppointmentStatus(select.getAttribute('data-appt-id'), select.value);
-    }
-  });
+        const { data: staffRow, error: staffError } = await supabaseClient
+          .from('staff')
+          .select('clinic_id, full_name, role')
+          .eq('id', user.id)
+          .single();
 
-  // Start the app
-  checkSession();
-});
-</script>
-</body>
+        if (staffError || !staffRow) {
+          alert('Your account is not linked to a clinic yet. Contact your administrator.');
+          await supabaseClient.auth.signOut();
+          showLogin();
+          return false;
+        }
+
+        CURRENT_CLINIC_ID = staffRow.clinic_id;
+        CURRENT_STAFF_ROLE = staffRow.role || '';
+        document.getElementById('userName').textContent = staffRow.full_name || 'Staff';
+        document.getElementById('userRole').textContent = staffRow.role || 'Clinic Staff';
+        document.getElementById('userInitial').textContent = (staffRow.full_name || 'S').charAt(0).toUpperCase();
+
+        const { data: clinicRow } = await supabaseClient
+          .from('clinics')
+          .select('name')
+          .eq('id', CURRENT_CLINIC_ID)
+          .single();
+
+        setClinicBranding(clinicRow ? clinicRow.name : 'Clinic');
+        return true;
+      }
+
+      // Writes the real clinic name into every place branding shows up.
+      function setClinicBranding(clinicName) {
+        const parts = clinicName.trim().split(' ');
+        document.getElementById('sidebarClinicName').textContent = parts[0] || 'Clinic';
+        document.getElementById('sidebarClinicSubtitle').textContent = parts.slice(1).join(' ') || 'Management System';
+        document.getElementById('dashboardWelcome').textContent = 'Welcome to ' + clinicName;
+        document.getElementById('pageDocTitle').textContent = clinicName + ' - Clinic ERP';
+      }
+
+      function showLogin() {
+        document.getElementById('loginContainer').classList.add('show');
+        document.getElementById('appContainer').classList.remove('show');
+      }
+      function showApp() {
+        document.getElementById('loginContainer').classList.remove('show');
+        document.getElementById('appContainer').classList.add('show');
+      }
+
+      /* ============================================================
+         SECTION 4: PAGE NAVIGATION
+         Sidebar buttons use data-page="..." attributes instead of
+         inline onclick, and we read that attribute here. This avoids
+         ever needing to build JS strings with embedded quotes for
+         navigation (a source of fragile bugs earlier).
+         ============================================================ */
+      function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector('.nav-link[data-page="' + pageId + '"]').classList.add('active');
+
+        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue" };
+        document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
+      }
+
+      /* ============================================================
+         SECTION 5: LOAD ALL DATA (called once after login)
+         ============================================================ */
+      async function loadAllData() {
+        await loadPatients();
+        await loadStaffCache();
+        await populateAppointmentDropdowns();
+        await loadQueue();
+        await loadCommonConditions();
+        applyRoleVisibility();
+        if (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager') {
+          await loadRevenue();
+        }
+      }
+
+      // Shows/hides UI elements based on the logged-in user's role. This is a
+      // convenience for a cleaner interface, NOT the actual security boundary -
+      // fee_amount is protected by an RLS policy on the visits table itself,
+      // so even if this function were skipped entirely, a non-doctor still
+      // could not retrieve real fee data from Supabase.
+      function applyRoleVisibility() {
+        const isDoctor  = CURRENT_STAFF_ROLE === 'Doctor';
+        const canSeeRev = CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager';
+        const isManager = CURRENT_STAFF_ROLE === 'Manager';
+        document.getElementById('visitFeeWrapper').style.display = isDoctor  ? 'block' : 'none';
+        document.getElementById('revenueCard').style.display     = canSeeRev ? 'block' : 'none';
+        document.getElementById('defaultFeeCard').style.display  = isManager ? 'block' : 'none';
+        // Populate the default fee input with current stored value
+        if (isManager) {
+          const stored = getDefaultFee();
+          if (stored) {
+            document.getElementById('defaultFeeInput').value = stored;
+            document.getElementById('defaultFeeStatus').textContent = 'Current default: Rs. ' + stored.toLocaleString();
+          }
+        }
+      }
+
+      // Sums revenue for the current calendar month from two sources:
+      //   1. visits.fee_amount           - fees logged when a doctor records a full visit
+      //   2. appointments.consultation_fee - fees entered at reception via Quick Walk-in
+      // Visible to Doctor and Manager roles (see applyRoleVisibility).
+      async function loadRevenue() {
+        const now = new Date();
+        const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+
+        const [visitResult, apptResult] = await Promise.all([
+          supabaseClient
+            .from('visits')
+            .select('fee_amount')
+            .eq('clinic_id', CURRENT_CLINIC_ID)
+            .gte('visit_date', monthStart),
+          supabaseClient
+            .from('appointments')
+            .select('consultation_fee')
+            .eq('clinic_id', CURRENT_CLINIC_ID)
+            .gte('appointment_date', monthStart)
+        ]);
+
+        if (visitResult.error) console.error('Failed to load visit revenue:', visitResult.error);
+        if (apptResult.error)  console.error('Failed to load appt revenue:', apptResult.error);
+
+        let total = 0;
+        for (const row of (visitResult.data || [])) {
+          if (row.fee_amount        != null) total += Number(row.fee_amount);
+        }
+        for (const row of (apptResult.data || [])) {
+          if (row.consultation_fee  != null) total += Number(row.consultation_fee);
+        }
+        document.getElementById('revenueThisMonth').textContent = 'Rs. ' + total.toLocaleString();
+      }
+
+      // Counts visits.diagnosis_category for the current calendar month,
+      // grouped and ranked most-frequent first. Only visits with a category
+      // selected are counted - free-text-only diagnoses (older visits, or a
+      // doctor who picked "Other") are excluded from this ranking on purpose,
+      // since counting inconsistent free text would give a misleading number.
+      async function loadCommonConditions() {
+        const now = new Date();
+        const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+
+        const result = await supabaseClient
+          .from('visits')
+          .select('diagnosis_category')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .gte('visit_date', monthStart)
+          .not('diagnosis_category', 'is', null);
+
+        if (result.error) {
+          document.getElementById('commonConditionsList').innerHTML =
+            '<tr><td colspan="2" class="empty-state" style="color:#dc2626;">Error: ' + result.error.message + '</td></tr>';
+          return;
+        }
+
+        const rows = result.data || [];
+        const counts = {};
+        for (const row of rows) {
+          const category = row.diagnosis_category;
+          counts[category] = (counts[category] || 0) + 1;
+        }
+
+        const ranked = Object.keys(counts)
+          .map(function (category) { return { category: category, count: counts[category] }; })
+          .sort(function (a, b) { return b.count - a.count; });
+
+        if (ranked.length === 0) {
+          document.getElementById('commonConditionsList').innerHTML =
+            '<tr><td colspan="2" class="empty-state">No categorized visits yet this month</td></tr>';
+          return;
+        }
+
+        let html = '';
+        for (const item of ranked) {
+          html += '<tr>';
+          html += '<td style="font-weight:500;">' + item.category + '</td>';
+          html += '<td>' + item.count + '</td>';
+          html += '</tr>';
+        }
+        document.getElementById('commonConditionsList').innerHTML = html;
+      }
+
+      /* ============================================================
+         SECTION 6: PATIENTS
+         ============================================================ */
+
+      async function loadPatients() {
+        const { data, error } = await supabaseClient
+          .from('patients')
+          .select('*')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .order('registered_at', { ascending: false });
+
+        if (error) {
+          document.getElementById('patientsList').innerHTML =
+            '<tr><td colspan="6" class="empty-state" style="color:#dc2626;">Error: ' + error.message + '</td></tr>';
+          return;
+        }
+
+        allPatients = data || [];
+        document.getElementById('totalPatients').textContent = allPatients.length;
+        renderPatientsTable(allPatients);
+      }
+
+      // Builds the patient table rows. Each row has a data-patient-id
+      // attribute (read by a click listener) instead of an inline
+      // onclick with a template string - simpler, and avoids any
+      // quote-escaping issues.
+      function renderPatientsTable(list) {
+        const tbody = document.getElementById('patientsList');
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No patients found</td></tr>';
+          return;
+        }
+        let html = '';
+        for (const p of list) {
+          html += '<tr class="patient-row" data-patient-id="' + p.id + '" style="cursor:pointer;">';
+          html += '<td><span class="patient-code-badge">' + p.patient_code + '</span></td>';
+          html += '<td style="font-weight:500;">' + p.full_name + '</td>';
+          html += '<td>' + (p.phone || 'N/A') + '</td>';
+          html += '<td>' + (p.age != null ? p.age : 'N/A') + '</td>';
+          html += '<td>' + (p.gender || 'N/A') + '</td>';
+          html += '<td style="color:var(--text-light); font-size:13px;">' + new Date(p.registered_at).toLocaleDateString() + '</td>';
+          html += '<td style="text-align:right;">'
+            + '<button class="btn btn-secondary delete-patient-btn" data-pid="' + p.id + '" data-pname="' + p.full_name.replace(/"/g, '&quot;') + '"'
+            + ' style="padding:3px 10px; font-size:12px; color:#e74c3c; border-color:#e74c3c;" onclick="event.stopPropagation();">'
+            + '<i class="fas fa-trash"></i></button></td>';
+          html += '</tr>';
+        }
+        tbody.innerHTML = html;
+        // Wire delete buttons after render
+        tbody.querySelectorAll('.delete-patient-btn').forEach(function(btn) {
+          btn.addEventListener('click', function () {
+            deletePatient(btn.getAttribute('data-pid'), btn.getAttribute('data-pname'));
+          });
+        });
+      }
+
+      function filterPatients() {
+        const q = document.getElementById('patientSearch').value.trim().toLowerCase();
+        if (!q) { renderPatientsTable(allPatients); return; }
+        const filtered = allPatients.filter(p =>
+          p.full_name.toLowerCase().includes(q) || p.patient_code.toLowerCase().includes(q)
+        );
+        renderPatientsTable(filtered);
+      }
+
+      async function showAddPatientForm() {
+        document.getElementById('addPatientForm').style.display = 'block';
+        const { data, error } = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
+        document.getElementById('patientCode').value = error ? '' : data;
+        document.getElementById('patientName').focus();
+      }
+
+      function hideAddPatientForm() {
+        document.getElementById('addPatientForm').style.display = 'none';
+        ['patientCode','patientName','patientPhone','patientAge','patientGender','patientAddress']
+          .forEach(id => document.getElementById(id).value = '');
+      }
+
+      // After a successful save, the form stays open (doesn't close) - it just
+      // clears itself, fetches a fresh auto-generated patient ID, and puts the
+      // keyboard focus back on the Name field. This is what lets a receptionist
+      // register several patients in a row without ever touching the mouse.
+      async function resetPatientFormForNextEntry() {
+        ['patientName','patientPhone','patientAge','patientGender','patientAddress']
+          .forEach(id => document.getElementById(id).value = '');
+
+        const { data, error } = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
+        document.getElementById('patientCode').value = error ? '' : data;
+        document.getElementById('patientName').focus();
+      }
+
+      async function handleAddPatient() {
+        const code = document.getElementById('patientCode').value.trim();
+        const name = document.getElementById('patientName').value.trim();
+
+        if (!code || !name) {
+          alert('Patient ID and Full Name are required.');
+          return;
+        }
+
+        const { error } = await supabaseClient.from('patients').insert({
+          clinic_id: CURRENT_CLINIC_ID,
+          patient_code: code,
+          full_name: name,
+          phone: document.getElementById('patientPhone').value.trim() || null,
+          age: document.getElementById('patientAge').value || null,
+          gender: document.getElementById('patientGender').value || null,
+          address: document.getElementById('patientAddress').value.trim() || null
+        });
+
+        if (error) {
+          if (error.message.includes('patients_clinic_id_patient_code_key')) {
+            alert('That Patient ID is already in use. Choose a different one.');
+          } else {
+            alert('Error saving patient: ' + error.message);
+          }
+          return;
+        }
+
+        await loadPatients();
+        await resetPatientFormForNextEntry();
+      }
+
+      /* ============================================================
+         SECTION 7: PATIENT DETAIL / VISIT HISTORY
+         ============================================================ */
+
+      async function openPatientDetail(patientId) {
+        const patient = allPatients.find(p => p.id === patientId);
+        if (!patient) return;
+
+        currentDetailPatientId = patientId;
+        document.getElementById('patientsTableCard').style.display = 'none';
+        document.querySelector('.search-bar').style.display = 'none';
+        document.getElementById('patientDetailView').style.display = 'block';
+
+        document.getElementById('detailPatientName').textContent = patient.full_name + ' (' + patient.patient_code + ')';
+        document.getElementById('detailPatientMeta').textContent =
+          (patient.age ? patient.age + ' yrs, ' : '') + (patient.gender || '') + ' - ' + (patient.phone || 'No phone on file');
+
+        const doctors = staffCache.filter(s => s.role === 'Doctor');
+        const doctorList = doctors.length ? doctors : staffCache;
+        document.getElementById('visitDoctor').innerHTML =
+          doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
+        document.getElementById('visitDate').value = todayStr();
+
+        await loadVisitHistory(patientId);
+      }
+
+      function closePatientDetail() {
+        document.getElementById('patientDetailView').style.display = 'none';
+        document.getElementById('patientsTableCard').style.display = 'block';
+        document.querySelector('.search-bar').style.display = 'block';
+        currentDetailPatientId = null;
+      }
+
+      async function loadVisitHistory(patientId) {
+        const { data, error } = await supabaseClient
+          .from('visits')
+          .select('visit_date, diagnosis, prescription, follow_up_date, staff(full_name)')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .eq('patient_id', patientId)
+          .order('visit_date', { ascending: false });
+
+        if (error) {
+          document.getElementById('visitHistoryList').innerHTML =
+            '<tr><td colspan="6" class="empty-state" style="color:#dc2626;">Error: ' + error.message + '</td></tr>';
+          return;
+        }
+
+        currentVisitsCache = data || [];
+        if (currentVisitsCache.length === 0) {
+          document.getElementById('visitHistoryList').innerHTML = '<tr><td colspan="6" class="empty-state">No visits recorded yet</td></tr>';
+          return;
+        }
+
+        let html = '';
+        for (let i = 0; i < currentVisitsCache.length; i++) {
+          const v = currentVisitsCache[i];
+          html += '<tr>';
+          html += '<td style="font-family:monospace;">' + v.visit_date + '</td>';
+          html += '<td>' + (v.staff ? v.staff.full_name : 'N/A') + '</td>';
+          html += '<td>' + (v.diagnosis || '-') + '</td>';
+          html += '<td>' + (v.prescription || '-') + '</td>';
+          html += '<td>' + (v.follow_up_date || '-') + '</td>';
+          // data-visit-index instead of passing the object inline - this is
+          // exactly the pattern that avoided the earlier syntax-error bug.
+          html += '<td><button class="btn btn-secondary print-visit-btn" data-visit-index="' + i + '" style="padding:6px 12px; font-size:12.5px;"><i class="fas fa-print"></i> Print</button></td>';
+          html += '</tr>';
+        }
+        document.getElementById('visitHistoryList').innerHTML = html;
+      }
+
+      async function handleAddVisit() {
+        const doctorId = document.getElementById('visitDoctor').value;
+        const date = document.getElementById('visitDate').value;
+
+        if (!doctorId || !date) {
+          alert('Doctor and Visit Date are required.');
+          return;
+        }
+
+        const feeInput = document.getElementById('visitFee');
+        const feeValue = feeInput && feeInput.value ? Number(feeInput.value) : null;
+
+        const { error } = await supabaseClient.from('visits').insert({
+          clinic_id: CURRENT_CLINIC_ID,
+          patient_id: currentDetailPatientId,
+          doctor_id: doctorId,
+          visit_date: date,
+          diagnosis_category: document.getElementById('visitDiagnosisCategory').value || null,
+          diagnosis: document.getElementById('visitDiagnosis').value.trim() || null,
+          prescription: document.getElementById('visitPrescription').value.trim() || null,
+          follow_up_date: document.getElementById('visitFollowUp').value || null,
+          fee_amount: feeValue
+        });
+
+        if (error) {
+          alert('Error saving visit: ' + error.message);
+          return;
+        }
+
+        ['visitDiagnosisCategory','visitDiagnosis','visitPrescription','visitFollowUp','visitFee'].forEach(id => document.getElementById(id).value = '');
+        await loadVisitHistory(currentDetailPatientId);
+      }
+
+      // Opens a print-formatted prescription slip in a new tab and triggers
+      // the browser's native print dialog (free, works offline, no PDF library).
+      //
+      // HOW THE LIVE SERVER BUG WAS DIAGNOSED AND WHY THIS FIX WORKS
+      // --------------------------------------------------------------
+      // VS Code Live Server injects its live-reload script by doing a plain-text
+      // search of the raw file bytes and replacing the first occurrence of the
+      // closing-body-tag pattern it finds. When this file had that closing tag
+      // pattern inside a JavaScript string literal (inside the script block),
+      // Live Server found THAT occurrence first and injected a script element
+      // there - directly inside a JS string, producing a syntax error that crashed
+      // the entire script block, which is why no function including handleLogin
+      // existed at all in the browser.
+      //
+      // Every rewrite of the print section failed because every version still
+      // contained that pattern somewhere in the script block. Removing the print
+      // button entirely made the pattern disappear, so login worked again.
+      //
+      // Two-part fix:
+      //   1. Blob URL - the popup HTML is built at runtime and opened as a blob:
+      //      URL. Live Server only injects into files it serves from disk; a
+      //      blob: URL is never read from disk so Live Server cannot touch it.
+      //   2. Split closing tags - in the lines array below, the closing body and
+      //      html tags are written as two string pieces joined at runtime
+      //      ('</' + 'body>') so that pattern never appears literally in the
+      //      source file inside the script block, giving Live Server nothing to
+      //      match on even if it scans this area.
+      function printPrescription(index) {
+        const visit = currentVisitsCache[index];
+        if (!visit) return;
+        const patient = allPatients.find(p => p.id === currentDetailPatientId);
+        const clinicName = document.getElementById('sidebarClinicName').textContent
+          + ' ' + document.getElementById('sidebarClinicSubtitle').textContent;
+
+        const patientName   = patient ? patient.full_name   : '';
+        const patientCode   = patient ? patient.patient_code : '';
+        const patientAge    = (patient && patient.age)    ? patient.age           : 'N/A';
+        const patientGender = (patient && patient.gender) ? patient.gender        : 'N/A';
+        const doctorName    = visit.staff                 ? visit.staff.full_name : 'N/A';
+
+        // Closing tags are written as concatenated halves so the literal pattern
+        // does not appear anywhere inside this script block - see comment above.
+        const CLOSE_STYLE = '</' + 'style>';
+        const CLOSE_HEAD  = '</' + 'head>';
+        const OPEN_BODY   = '<' + 'body>';
+        const CLOSE_BODY  = '</' + 'body>';
+        const CLOSE_HTML  = '</' + 'html>';
+
+        const lines = [
+          '<!DOCTYPE html>',
+          '<html lang="en">',
+          '<head>',
+          '<meta charset="UTF-8">',
+          '<title>Prescription - ' + patientName + '</title>',
+          '<style>',
+          'body{font-family:Segoe UI,sans-serif;padding:40px;color:#134e4a;max-width:700px;margin:0 auto;}',
+          '.hdr{text-align:center;border-bottom:3px solid #0d9488;padding-bottom:16px;margin-bottom:24px;}',
+          '.hdr h1{color:#0d9488;font-size:22px;margin:0 0 4px;}',
+          '.hdr p{font-size:12px;color:#5f8a86;margin:0;}',
+          '.row{display:flex;justify-content:space-between;margin-bottom:14px;font-size:14px;}',
+          '.sec{margin-bottom:20px;}',
+          '.sec h3{font-size:12px;text-transform:uppercase;color:#5f8a86;margin-bottom:6px;}',
+          '.sec p{font-size:16px;white-space:pre-wrap;margin:0;}',
+          '#rxPrintBtn{display:block;margin:36px auto 0;padding:10px 28px;',
+          '  background:#0d9488;color:#fff;border:none;border-radius:8px;',
+          '  font-size:15px;font-weight:600;cursor:pointer;}',
+          '@media print{#rxPrintBtn{display:none;}}',
+          CLOSE_STYLE,
+          CLOSE_HEAD,
+          OPEN_BODY,
+          '<div class="hdr"><h1>' + clinicName + '</h1><p>Prescription Slip</p></div>',
+          '<div class="row">',
+          '  <span><strong>Patient:</strong> ' + patientName + ' (' + patientCode + ')</span>',
+          '  <span><strong>Date:</strong> ' + visit.visit_date + '</span>',
+          '</div>',
+          '<div class="row">',
+          '  <span><strong>Age / Gender:</strong> ' + patientAge + ' / ' + patientGender + '</span>',
+          '  <span><strong>Doctor:</strong> ' + doctorName + '</span>',
+          '</div>',
+          '<div class="sec"><h3>Diagnosis</h3><p>' + (visit.diagnosis || 'Not recorded') + '</p></div>',
+          '<div class="sec"><h3>Prescription (Rx)</h3><p>' + (visit.prescription || 'Not recorded') + '</p></div>',
+          visit.follow_up_date
+            ? '<div class="sec"><h3>Follow-up Date</h3><p>' + visit.follow_up_date + '</p></div>'
+            : '',
+          '<button id="rxPrintBtn" onclick="window.print()">Print / Save as PDF</button>',
+          CLOSE_BODY,
+          CLOSE_HTML
+        ];
+
+        const html = lines.join('\n');
+        const blob = new Blob([html], { type: 'text/html' });
+        const url  = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'width=680,height=820');
+        // Blob URL is not revoked here - revoking before the popup finishes
+        // loading would blank the window. The browser frees it when the tab closes.
+      }
+
+      /* ============================================================
+         SECTION 8: STAFF CACHE (used by appointment + visit dropdowns)
+         ============================================================ */
+      async function loadStaffCache() {
+        const { data, error } = await supabaseClient
+          .from('staff')
+          .select('id, full_name, role')
+          .eq('clinic_id', CURRENT_CLINIC_ID);
+
+        if (error) { console.error('Failed to load staff:', error); return; }
+        staffCache = data || [];
+      }
+
+      /* ============================================================
+         SECTION 9: APPOINTMENTS / TODAY'S QUEUE
+         ============================================================ */
+
+      function todayStr() {
+        return new Date().toISOString().split('T')[0];
+      }
+
+      async function populateAppointmentDropdowns() {
+        document.getElementById('apptPatient').innerHTML = allPatients
+          .map(p => '<option value="' + p.id + '">' + p.full_name + ' (' + p.patient_code + ')</option>').join('');
+
+        const doctors = staffCache.filter(s => s.role === 'Doctor');
+        const doctorList = doctors.length ? doctors : staffCache;
+        document.getElementById('apptDoctor').innerHTML =
+          doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + (s.role ? ' - ' + s.role : '') + '</option>').join('');
+      }
+
+      async function showAddAppointmentForm() {
+        document.getElementById('addAppointmentForm').style.display = 'block';
+        const today = todayStr();
+        document.getElementById('apptDate').value = today;
+        await populateAppointmentDropdowns();
+        await refreshTokenForDate();
+      }
+
+      function hideAddAppointmentForm() {
+        document.getElementById('addAppointmentForm').style.display = 'none';
+        ['apptToken','apptNotes'].forEach(id => document.getElementById(id).value = '');
+      }
+
+      // ---------------------------------------------------------------
+      // QUICK WALK-IN: name + phone only, creates the patient AND books
+      // today's appointment in one action. This is the fast path for a
+      // receptionist facing a line of walk-ins - no need to open the full
+      // patient registry form first, then a separate appointment form after.
+      // ---------------------------------------------------------------
+
+      // ── Delete a patient and all their appointments ──────────────────────────
+      async function deletePatient(patientId, patientName) {
+        if (!confirm('Delete patient "' + patientName + '"?\n\nThis will also delete ALL their appointments and visit history. This cannot be undone.')) return;
+        // Delete appointments first (FK)
+        await supabaseClient.from('appointments').delete().eq('patient_id', patientId).eq('clinic_id', CURRENT_CLINIC_ID);
+        await supabaseClient.from('visits').delete().eq('patient_id', patientId).eq('clinic_id', CURRENT_CLINIC_ID);
+        const del = await supabaseClient.from('patients').delete().eq('id', patientId).eq('clinic_id', CURRENT_CLINIC_ID);
+        if (del.error) {
+          alert('Error deleting patient: ' + del.error.message);
+          return;
+        }
+        await loadPatients();
+        await loadQueue();
+        alert(patientName + ' has been deleted.');
+      }
+
+      // ── Undo the most recent quick walk-in ───────────────────────────────────
+      async function undoLastWalkIn() {
+        if (!lastWalkIn) return;
+        const { patientId, apptId, isNew, name } = lastWalkIn;
+        if (!confirm('Undo walk-in for "' + name + '"?\n'
+          + (isNew ? 'This will delete the appointment AND the patient record.' : 'This will delete only the appointment (patient record kept).'))) {
+          return;
+        }
+        if (apptId) {
+          await supabaseClient.from('appointments').delete().eq('id', apptId);
+        }
+        if (isNew && patientId) {
+          await supabaseClient.from('patients').delete().eq('id', patientId).eq('clinic_id', CURRENT_CLINIC_ID);
+        }
+        lastWalkIn = null;
+        document.getElementById('undoLastWalkInBtn').style.display = 'none';
+        await loadPatients();
+        await loadQueue();
+        alert('Undone.');
+      }
+
+      // ── Default consultation fee (stored in localStorage per clinic) ──────────
+      // Manager sets it once; every walk-in auto-fills from it.
+      // Any staff can still override the fee for an individual patient.
+
+      function defaultFeeKey() {
+        return 'clinic_default_fee_' + CURRENT_CLINIC_ID;
+      }
+
+      function getDefaultFee() {
+        const val = localStorage.getItem(defaultFeeKey());
+        return val ? Number(val) : null;
+      }
+
+
+      function updateDefaultFeeHint() {
+        const stored = getDefaultFee();
+        const statusEl = document.getElementById('defaultFeeStatus');
+        if (statusEl) {
+          statusEl.textContent = stored ? 'Current default: Rs. ' + stored.toLocaleString() : '';
+        }
+      }
+
+      function saveDefaultFee(fee) {
+        if (fee && !isNaN(fee) && Number(fee) > 0) {
+          localStorage.setItem(defaultFeeKey(), String(Number(fee)));
+          updateDefaultFeeHint();
+        }
+      }
+
+      async function showQuickWalkInForm() {
+        document.getElementById('quickWalkInForm').style.display = 'block';
+        quickSelectedPatientId = null;
+        document.getElementById('quickSelectedInfo').style.display = 'none';
+        document.getElementById('quickSelectedInfo').textContent = '';
+        document.getElementById('quickNameList').classList.remove('open');
+        // Auto-fill fee from stored default
+        const storedFee = getDefaultFee();
+        document.getElementById('quickFee').value = storedFee ? storedFee : '';
+        // Default date to today
+        document.getElementById('quickDate').value = todayStr();
+        const doctors = staffCache.filter(s => s.role === 'Doctor');
+        const doctorList = doctors.length ? doctors : staffCache;
+        document.getElementById('quickDoctor').innerHTML =
+          doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
+        document.getElementById('quickName').focus();
+      }
+
+      function hideQuickWalkInForm() {
+        document.getElementById('quickWalkInForm').style.display = 'none';
+        document.getElementById('quickName').value = '';
+        document.getElementById('quickPhone').value = '';
+        document.getElementById('quickAge').value = '';
+        document.getElementById('quickComplaint').value = '';
+        document.getElementById('quickDate').value = todayStr();
+        const storedFee = getDefaultFee();
+        document.getElementById('quickFee').value = storedFee ? storedFee : '';
+        document.getElementById('quickNameList').classList.remove('open');
+        document.getElementById('quickSelectedInfo').style.display = 'none';
+        quickSelectedPatientId = null;
+      }
+
+      // Live name autocomplete for the Quick Walk-in form.
+      // Searches allPatients (already in memory) as the user types.
+      // Showing matches lets the receptionist pick an existing patient
+      // instead of accidentally creating a duplicate.
+      function filterQuickWalkInName() {
+        const query = document.getElementById('quickName').value.trim().toLowerCase();
+        const list  = document.getElementById('quickNameList');
+
+        // Clear any prior selection when the user edits the name field
+        if (quickSelectedPatientId) {
+          quickSelectedPatientId = null;
+          document.getElementById('quickSelectedInfo').style.display = 'none';
+        }
+
+        if (!query) {
+          list.classList.remove('open');
+          list.innerHTML = '';
+          return;
+        }
+
+        const matches = allPatients.filter(p =>
+          p.full_name.toLowerCase().includes(query)
+        );
+
+        if (matches.length === 0) {
+          list.classList.remove('open');
+          list.innerHTML = '';
+          return;
+        }
+
+        list.innerHTML = matches.map(function (p) {
+          const parts = [p.patient_code];
+          if (p.age)    parts.push(p.age + ' yrs');
+          if (p.gender) parts.push(p.gender);
+          if (p.phone)  parts.push(p.phone);
+          const meta = parts.join(' | ');
+          return '<div class="autocomplete-item" data-patient-id="' + p.id + '">'
+            + '<strong>' + p.full_name + '</strong>'
+            + '<span>' + meta + '</span>'
+            + '</div>';
+        }).join('');
+        list.classList.add('open');
+      }
+
+      // Called when user clicks a suggestion in the dropdown.
+      // Fills in the form fields from the selected patient's existing data
+      // and marks them as "selected" so handleQuickWalkIn skips patient creation.
+      function selectExistingPatientForWalkIn(patientId) {
+        const patient = allPatients.find(p => p.id === patientId);
+        if (!patient) return;
+        quickSelectedPatientId = patientId;
+        document.getElementById('quickName').value  = patient.full_name;
+        document.getElementById('quickPhone').value = patient.phone || '';
+        document.getElementById('quickAge').value   = patient.age != null ? patient.age : '';
+        document.getElementById('quickNameList').classList.remove('open');
+        const info = document.getElementById('quickSelectedInfo');
+        const meta = [patient.patient_code, patient.age ? patient.age + ' yrs' : null, patient.gender].filter(Boolean).join(' · ');
+        info.textContent = '✓ Existing patient: ' + meta;
+        info.style.display = 'block';
+      }
+
+      // Runs in sequence: optionally create a new patient, then book the
+      // appointment. Uses quickSelectedPatientId when set (existing patient path)
+      // to skip patient creation entirely.
+      async function handleQuickWalkIn() {
+        const name      = document.getElementById('quickName').value.trim();
+        const phone     = document.getElementById('quickPhone').value.trim();
+        const ageVal    = document.getElementById('quickAge').value;
+        const feeVal    = document.getElementById('quickFee').value;
+        const complaint = document.getElementById('quickComplaint').value.trim();
+        const doctorId  = document.getElementById('quickDoctor').value;
+        const walkDate  = document.getElementById('quickDate').value || todayStr();
+
+        if (!name || !doctorId) {
+          alert('Patient name and Doctor are required.');
+          return;
+        }
+
+        const consultationFee = feeVal ? Number(feeVal) : null;
+        const age             = ageVal ? Number(ageVal)  : null;
+
+        let patientId;
+        let displayCode;
+
+        if (quickSelectedPatientId) {
+          // Existing patient selected - no new record needed
+          patientId   = quickSelectedPatientId;
+          displayCode = (allPatients.find(p => p.id === patientId) || {}).patient_code || '';
+        } else {
+          // Duplicate guard: block if same name + same phone already exist
+          if (phone) {
+            const dup = allPatients.find(function (p) {
+              return p.full_name.toLowerCase() === name.toLowerCase()
+                  && p.phone && p.phone.replace(/\D/g,'') === phone.replace(/\D/g,'');
+            });
+            if (dup) {
+              const use = confirm(
+                'A patient named "' + dup.full_name + '" with phone ' + dup.phone + ' already exists (ID: ' + dup.patient_code + ').\n\nClick OK to add them to the queue instead of creating a duplicate.\nClick Cancel to go back and change the name or phone.'
+              );
+              if (use) {
+                quickSelectedPatientId = dup.id;
+                patientId   = dup.id;
+                displayCode = dup.patient_code;
+              } else {
+                return;
+              }
+            }
+          }
+          if (!quickSelectedPatientId) {
+          // New patient - generate ID and create the record
+          const codeResult = await supabaseClient.rpc('generate_patient_code', { p_clinic_id: CURRENT_CLINIC_ID });
+          if (codeResult.error) {
+            alert('Error generating patient ID: ' + codeResult.error.message);
+            return;
+          }
+          displayCode = codeResult.data;
+
+          const patientInsert = await supabaseClient.from('patients').insert({
+            clinic_id:    CURRENT_CLINIC_ID,
+            patient_code: displayCode,
+            full_name:    name,
+            phone:        phone || null,
+            age:          age
+          }).select().single();
+
+          if (patientInsert.error) {
+            alert('Error creating patient: ' + patientInsert.error.message);
+            return;
+          }
+          patientId = patientInsert.data.id;
+          } // end if(!quickSelectedPatientId)
+        }
+
+        const today = walkDate;
+        const tokenResult = await supabaseClient.rpc('generate_token_number', {
+          p_clinic_id: CURRENT_CLINIC_ID,
+          p_date: today
+        });
+        const tokenNumber = tokenResult.error ? null : tokenResult.data;
+
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5);
+
+        const apptInsert = await supabaseClient.from('appointments').insert({
+          clinic_id:        CURRENT_CLINIC_ID,
+          patient_id:       patientId,
+          doctor_id:        doctorId,
+          appointment_date: today,
+          appointment_time: currentTime,
+          token_number:     tokenNumber,
+          consultation_fee: consultationFee,
+          chief_complaint:  complaint || null,
+          status:           'waiting'
+        }).select().single();
+
+        if (apptInsert.error) {
+          const prefix = quickSelectedPatientId
+            ? 'Could not add to queue'
+            : 'Patient was created (ID: ' + displayCode + ') but adding to queue failed';
+          alert(prefix + ': ' + apptInsert.error.message);
+          if (!quickSelectedPatientId) await loadPatients();
+          hideQuickWalkInForm();
+          return;
+        }
+
+        // Track this walk-in so it can be undone
+        const wasNew = !quickSelectedPatientId || (quickSelectedPatientId && patientId !== quickSelectedPatientId);
+        lastWalkIn = {
+          patientId:  patientId,
+          apptId:     apptInsert.data ? apptInsert.data.id : null,
+          isNew:      !quickSelectedPatientId,
+          name:       name
+        };
+        document.getElementById('undoLastWalkInBtn').style.display = 'inline-flex';
+
+        await loadPatients();
+        await loadQueue();
+        if (consultationFee && (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager')) {
+          await loadRevenue();
+        }
+
+        const feeNote = consultationFee ? '  |  Fee: Rs. ' + consultationFee.toLocaleString() : '';
+        alert(name + ' added — Token #' + tokenNumber + feeNote);
+
+        document.getElementById('quickName').value = '';
+        document.getElementById('quickPhone').value = '';
+        document.getElementById('quickAge').value = '';
+        document.getElementById('quickComplaint').value = '';
+        document.getElementById('quickDate').value = todayStr();
+        const storedFee = getDefaultFee();
+        document.getElementById('quickFee').value = storedFee ? storedFee : '';
+        quickSelectedPatientId = null;
+        document.getElementById('quickSelectedInfo').style.display = 'none';
+        document.getElementById('quickNameList').classList.remove('open');
+        document.getElementById('quickName').focus();
+      }
+
+      // Fetches the next token number for whichever date is currently
+      // selected. Called both when the form opens and whenever the date
+      // input changes, so the token always matches the correct day.
+      async function refreshTokenForDate() {
+        const selectedDate = document.getElementById('apptDate').value;
+        if (!selectedDate) return;
+        const { data, error } = await supabaseClient.rpc('generate_token_number', {
+          p_clinic_id: CURRENT_CLINIC_ID,
+          p_date: selectedDate
+        });
+        document.getElementById('apptToken').value = error ? '' : data;
+      }
+
+      async function handleAddAppointment() {
+        const patientId = document.getElementById('apptPatient').value;
+        const doctorId = document.getElementById('apptDoctor').value;
+        const date = document.getElementById('apptDate').value;
+        const time = document.getElementById('apptTime').value;
+
+        if (!patientId || !doctorId || !date || !time) {
+          alert('Patient, Doctor, Date, and Time are required.');
+          return;
+        }
+
+        const tokenVal = document.getElementById('apptToken').value;
+        const { error } = await supabaseClient.from('appointments').insert({
+          clinic_id: CURRENT_CLINIC_ID,
+          patient_id: patientId,
+          doctor_id: doctorId,
+          appointment_date: date,
+          appointment_time: time,
+          token_number: tokenVal ? parseInt(tokenVal) : null,
+          notes: document.getElementById('apptNotes').value.trim() || null,
+          status: 'scheduled'
+        });
+
+        if (error) {
+          alert('Error saving appointment: ' + error.message);
+          return;
+        }
+
+        await loadQueue();
+        ['apptTime','apptToken','apptNotes'].forEach(id => document.getElementById(id).value = '');
+        await refreshTokenForDate();
+        document.getElementById('apptPatient').focus();
+      }
+
+      async function loadQueue() {
+        const { data, error } = await supabaseClient
+          .from('appointments')
+          .select('id, appointment_time, token_number, status, patients(full_name, patient_code), staff(full_name)')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .eq('appointment_date', todayStr())
+          .order('token_number', { ascending: true, nullsFirst: false })
+          .order('appointment_time', { ascending: true });
+
+        if (error) {
+          document.getElementById('queueList').innerHTML =
+            '<tr><td colspan="5" class="empty-state" style="color:#dc2626;">Error: ' + error.message + '</td></tr>';
+          return;
+        }
+
+        const queue = data || [];
+        const dateLabel = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+        document.getElementById('queueDateLabel').textContent = queue.length + ' appointment(s) - ' + dateLabel;
+
+        if (queue.length === 0) {
+          document.getElementById('queueList').innerHTML = '<tr><td colspan="5" class="empty-state">No appointments today</td></tr>';
+          return;
+        }
+
+        const statusBg = { scheduled:'#e0f2fe', waiting:'#fef3c7', in_progress:'#dbeafe', completed:'#dcfce7', cancelled:'#fee2e2', no_show:'#fee2e2' };
+        const statusFg = { scheduled:'#0369a1', waiting:'#92400e', in_progress:'#1e40af', completed:'#166534', cancelled:'#991b1b', no_show:'#991b1b' };
+        const statusOptions = ['scheduled','waiting','in_progress','completed','cancelled','no_show'];
+
+        let html = '';
+        for (const a of queue) {
+          const patientName = a.patients ? a.patients.full_name : 'Unknown';
+          const patientCode = a.patients ? a.patients.patient_code : '';
+          const doctorName = a.staff ? a.staff.full_name : 'Unassigned';
+          const timeShort = a.appointment_time ? a.appointment_time.slice(0,5) : '';
+
+          let selectHtml = '<select class="status-select" data-appt-id="' + a.id + '" style="padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:' + statusBg[a.status] + '; color:' + statusFg[a.status] + '; font-weight:600; font-size:12.5px; text-transform:capitalize;">';
+          for (const s of statusOptions) {
+            selectHtml += '<option value="' + s + '"' + (s === a.status ? ' selected' : '') + '>' + s.replace('_',' ') + '</option>';
+          }
+          selectHtml += '</select>';
+
+          html += '<tr>';
+          html += '<td>' + (a.token_number != null ? a.token_number : '-') + '</td>';
+          html += '<td style="font-family:monospace;">' + timeShort + '</td>';
+          html += '<td style="font-weight:500;">' + patientName + ' <span style="color:var(--text-light); font-size:12px;">(' + patientCode + ')</span></td>';
+          html += '<td>' + doctorName + '</td>';
+          html += '<td>' + selectHtml + '</td>';
+          html += '</tr>';
+        }
+        document.getElementById('queueList').innerHTML = html;
+      }
+
+      async function updateAppointmentStatus(appointmentId, newStatus) {
+        const { error } = await supabaseClient
+          .from('appointments')
+          .update({ status: newStatus })
+          .eq('id', appointmentId);
+
+        if (error) {
+          alert('Error updating status: ' + error.message);
+          await loadQueue();
+        }
+      }
+
+      // ---------------------------------------------------------------
+      // KEYBOARD FLOW HELPER
+      // Takes an ordered list of field IDs and a "save" button ID. Pressing
+      // Enter in any field except the last one moves focus to the next
+      // field. Pressing Enter in the LAST field clicks the save button
+      // instead. This lets a receptionist fill an entire form using only
+      // the keyboard - no mouse needed between fields or to submit.
+      // Used for the Patient form, Quick Walk-in form, and Appointment form.
+      // ---------------------------------------------------------------
+      function enableEnterKeyFlow(fieldIds, saveButtonId) {
+        for (let i = 0; i < fieldIds.length; i++) {
+          const field = document.getElementById(fieldIds[i]);
+          if (!field) continue;
+
+          field.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+
+            const isLastField = (i === fieldIds.length - 1);
+            if (isLastField) {
+              document.getElementById(saveButtonId).click();
+            } else {
+              const nextField = document.getElementById(fieldIds[i + 1]);
+              if (nextField) nextField.focus();
+            }
+          });
+        }
+      }
+
+      /* ============================================================
+         SECTION 10: EVENT WIRING
+         All click/change/submit handlers are attached here, once, using
+         addEventListener - not inline onclick="..." attributes. This is
+         the main structural change from before: it removes every place
+         where a JS string had to be built and injected into HTML, which
+         is what caused the earlier syntax-error bug.
+         ============================================================ */
+      document.addEventListener('DOMContentLoaded', function () {
+
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+        // Sidebar navigation
+        document.querySelectorAll('.nav-link').forEach(function (link) {
+          link.addEventListener('click', function () {
+            showPage(link.getAttribute('data-page'));
+          });
+        });
+
+        // Patients page
+        document.getElementById('showAddPatientBtn').addEventListener('click', showAddPatientForm);
+        document.getElementById('savePatientBtn').addEventListener('click', handleAddPatient);
+        enableEnterKeyFlow(
+          ['patientCode', 'patientName', 'patientPhone', 'patientAge', 'patientGender', 'patientAddress'],
+          'savePatientBtn'
+        );
+        document.getElementById('cancelPatientBtn').addEventListener('click', hideAddPatientForm);
+        document.getElementById('patientSearch').addEventListener('input', filterPatients);
+        document.getElementById('backToPatientListBtn').addEventListener('click', closePatientDetail);
+        document.getElementById('saveVisitBtn').addEventListener('click', handleAddVisit);
+
+        // Clicking a patient row opens their detail view. Clicking a Print
+        // button inside the visit history table prints that visit. Both are
+        // handled with one delegated listener on the whole document, reading
+        // data-* attributes instead of inline onclick strings.
+        document.addEventListener('click', function (event) {
+          const patientRow = event.target.closest('.patient-row');
+          if (patientRow) {
+            openPatientDetail(patientRow.getAttribute('data-patient-id'));
+            return;
+          }
+          const printBtn = event.target.closest('.print-visit-btn');
+          if (printBtn) {
+            printPrescription(parseInt(printBtn.getAttribute('data-visit-index')));
+            return;
+          }
+        });
+
+        // Appointments page
+        document.getElementById('showQuickWalkInBtn').addEventListener('click', showQuickWalkInForm);
+        document.getElementById('saveQuickWalkInBtn').addEventListener('click', handleQuickWalkIn);
+        document.getElementById('quickName').addEventListener('input', filterQuickWalkInName);
+        document.getElementById('quickName').addEventListener('blur', function () {
+          // Delay so a click on an autocomplete item fires before the list hides
+          setTimeout(function () {
+            document.getElementById('quickNameList').classList.remove('open');
+          }, 180);
+        });
+        document.getElementById('quickNameList').addEventListener('mousedown', function (event) {
+          const item = event.target.closest('.autocomplete-item');
+          if (item) {
+            event.preventDefault(); // stop blur from firing before mousedown completes
+            selectExistingPatientForWalkIn(item.getAttribute('data-patient-id'));
+          }
+        });
+        enableEnterKeyFlow(['quickName', 'quickPhone', 'quickAge', 'quickComplaint', 'quickFee', 'quickDate', 'quickDoctor'], 'saveQuickWalkInBtn');
+        document.getElementById('cancelQuickWalkInBtn').addEventListener('click', hideQuickWalkInForm);
+        document.getElementById('undoLastWalkInBtn').addEventListener('click', undoLastWalkIn);
+        document.getElementById('saveDefaultFeeBtn').addEventListener('click', function () {
+          const fee = document.getElementById('defaultFeeInput').value;
+          if (!fee || isNaN(fee) || Number(fee) < 0) {
+            alert('Enter a valid fee amount.');
+            return;
+          }
+          saveDefaultFee(fee);
+          document.getElementById('defaultFeeStatus').textContent = 'Saved ✔ Current default: Rs. ' + Number(fee).toLocaleString();
+          // Immediately update the walk-in form fee field if it is open
+          document.getElementById('quickFee').value = fee;
+        });
+        document.getElementById('showAddAppointmentBtn').addEventListener('click', showAddAppointmentForm);
+        document.getElementById('saveAppointmentBtn').addEventListener('click', handleAddAppointment);
+        enableEnterKeyFlow(
+          ['apptPatient', 'apptDoctor', 'apptDate', 'apptTime', 'apptToken', 'apptNotes'],
+          'saveAppointmentBtn'
+        );
+        document.getElementById('cancelAppointmentBtn').addEventListener('click', hideAddAppointmentForm);
+        document.getElementById('apptDate').addEventListener('change', refreshTokenForDate);
+
+        // Status dropdowns in the queue table are created dynamically, so we
+        // use event delegation (listen on the table body, check what was
+        // actually changed) instead of attaching a listener to elements that
+        // don't exist yet at page-load time.
+        document.getElementById('queueList').addEventListener('change', function (event) {
+          const select = event.target.closest('.status-select');
+          if (select) {
+            updateAppointmentStatus(select.getAttribute('data-appt-id'), select.value);
+          }
+        });
+
+        // Start the app
+        checkSession();
+      });
+    </script>
+  </body>
 </html>
