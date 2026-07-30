@@ -522,6 +522,16 @@
               <i class="fas fa-calendar-check"></i><span>Today's Queue</span>
             </button>
           </li>
+          <!-- Hidden by default, shown only for Doctor/Manager via
+               applyRoleVisibility() - same access rule as the dashboard
+               Revenue card. The actual data protection is the RLS policy
+               on visits.fee_amount for the doctor-only portion; this list
+               item hiding is a UI convenience on top of that. -->
+          <li class="nav-item" id="revenueNavItem" style="display:none;">
+            <button class="nav-link" data-page="revenue">
+              <i class="fas fa-money-bill-wave"></i><span>Revenue</span>
+            </button>
+          </li>
         </ul>
 
         <button class="logout-btn" id="logoutBtn">
@@ -750,11 +760,18 @@
                 </button>
               </div>
               <div class="card" style="margin-bottom: 20px">
-                <h3 id="detailPatientName" style="margin-bottom: 4px"></h3>
-                <p
-                  id="detailPatientMeta"
-                  style="color: var(--text-light); font-size: 13px"
-                ></p>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                  <div>
+                    <h3 id="detailPatientName" style="margin-bottom: 4px"></h3>
+                    <p
+                      id="detailPatientMeta"
+                      style="color: var(--text-light); font-size: 13px"
+                    ></p>
+                  </div>
+                  <button class="btn btn-secondary" id="printProfileBtn">
+                    <i class="fas fa-print"></i> Print Full Profile
+                  </button>
+                </div>
               </div>
 
               <div class="card" style="margin-bottom: 20px">
@@ -787,26 +804,14 @@
                     <label class="field-label" for="visitDiagnosisCategory"
                       >Diagnosis Category</label
                     >
-                    <select id="visitDiagnosisCategory">
-                      <option value="">Select (optional)</option>
-                      <option value="Flu / Viral Fever">
-                        Flu / Viral Fever
-                      </option>
-                      <option value="Common Cold">Common Cold</option>
-                      <option value="Hypertension">Hypertension</option>
-                      <option value="Diabetes">Diabetes</option>
-                      <option value="Gastroenteritis / Stomach Issues">
-                        Gastroenteritis / Stomach Issues
-                      </option>
-                      <option value="Skin Infection">Skin Infection</option>
-                      <option value="Respiratory Infection">
-                        Respiratory Infection
-                      </option>
-                      <option value="Allergy">Allergy</option>
-                      <option value="Injury / Wound">Injury / Wound</option>
-                      <option value="Routine Checkup">Routine Checkup</option>
-                      <option value="Other">Other</option>
-                    </select>
+                    <div class="autocomplete-wrapper">
+                      <input
+                        id="visitDiagnosisCategory"
+                        placeholder="Type to search (e.g. Dengue, Fever...)"
+                        autocomplete="off"
+                      />
+                      <div id="diagnosisCategoryList" class="autocomplete-list"></div>
+                    </div>
                   </div>
                   <div>
                     <label class="field-label" for="visitDiagnosis"
@@ -1174,6 +1179,60 @@
               </table>
             </div>
           </div>
+
+          <!-- ================= REVENUE (Doctor / Manager only) =================
+               Nav item itself is hidden for other roles (see applyRoleVisibility).
+               Real protection for visit fees is the RLS policy on visits -
+               a non-doctor session simply gets no fee_amount rows back even
+               if they somehow reached this page directly. Appointment-level
+               consultation_fee is not role-restricted (receptionists write
+               it), so it's shown to everyone who can see this page. -->
+          <div class="page" id="page-revenue">
+            <div style="margin-bottom: 26px;">
+              <h2 style="margin-bottom: 4px;">Revenue</h2>
+              <p style="color: var(--text-light);">Payment history - visit fees and consultation fees</p>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:22px;">
+              <div class="card">
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">This Month</h4>
+                <p style="font-size:26px; font-weight:700; color:var(--success);" id="revenueMonthTotal">Rs. 0</p>
+              </div>
+              <div class="card">
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Today</h4>
+                <p style="font-size:26px; font-weight:700; color:var(--primary);" id="revenueTodayTotal">Rs. 0</p>
+              </div>
+              <div class="card">
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Total Paid Entries</h4>
+                <p style="font-size:26px; font-weight:700; color:var(--text-dark);" id="revenueCount">0</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="form-row" style="margin-bottom:0;">
+                <div>
+                  <label class="field-label" for="revenueFromDate">From</label>
+                  <input id="revenueFromDate" type="date">
+                </div>
+                <div>
+                  <label class="field-label" for="revenueToDate">To</label>
+                  <input id="revenueToDate" type="date">
+                </div>
+                <button class="btn btn-primary" id="revenueFilterBtn"><i class="fas fa-filter"></i> Filter</button>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+              <table>
+                <thead>
+                  <tr><th>Date</th><th>Patient</th><th>Source</th><th>Amount</th></tr>
+                </thead>
+                <tbody id="revenueHistoryList">
+                  <tr><td colspan="4" class="empty-state">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -1333,8 +1392,12 @@
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         document.querySelector('.nav-link[data-page="' + pageId + '"]').classList.add('active');
 
-        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue" };
+        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue' };
         document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
+
+        if (pageId === 'revenue') {
+          loadRevenuePage();
+        }
       }
 
       /* ============================================================
@@ -1363,6 +1426,7 @@
         const isManager = CURRENT_STAFF_ROLE === 'Manager';
         document.getElementById('visitFeeWrapper').style.display = isDoctor  ? 'block' : 'none';
         document.getElementById('revenueCard').style.display     = canSeeRev ? 'block' : 'none';
+        document.getElementById('revenueNavItem').style.display  = canSeeRev ? 'block' : 'none';
         document.getElementById('defaultFeeCard').style.display  = isManager ? 'block' : 'none';
         // Populate the default fee input with current stored value
         if (isManager) {
@@ -1406,6 +1470,91 @@
           if (row.consultation_fee  != null) total += Number(row.consultation_fee);
         }
         document.getElementById('revenueThisMonth').textContent = 'Rs. ' + total.toLocaleString();
+      }
+
+      // ---------------------------------------------------------------
+      // REVENUE PAGE (full history, with patient names and date filter)
+      // Combines two sources into one list:
+      //   - visits.fee_amount (doctor-recorded, joined to get patient name)
+      //   - appointments.consultation_fee (reception-recorded walk-in fees)
+      // Defaults to showing the current month if no date filter is set.
+      // ---------------------------------------------------------------
+      async function loadRevenuePage() {
+        const fromInput = document.getElementById('revenueFromDate').value;
+        const toInput = document.getElementById('revenueToDate').value;
+
+        const now = new Date();
+        const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+        const from = fromInput || monthStart;
+        const to = toInput || todayStr();
+
+        const [visitResult, apptResult] = await Promise.all([
+          supabaseClient
+            .from('visits')
+            .select('visit_date, fee_amount, patients(full_name)')
+            .eq('clinic_id', CURRENT_CLINIC_ID)
+            .gte('visit_date', from)
+            .lte('visit_date', to)
+            .not('fee_amount', 'is', null),
+          supabaseClient
+            .from('appointments')
+            .select('appointment_date, consultation_fee, patients(full_name)')
+            .eq('clinic_id', CURRENT_CLINIC_ID)
+            .gte('appointment_date', from)
+            .lte('appointment_date', to)
+            .not('consultation_fee', 'is', null)
+        ]);
+
+        if (visitResult.error) console.error('Failed to load visit revenue:', visitResult.error);
+        if (apptResult.error) console.error('Failed to load appt revenue:', apptResult.error);
+
+        const entries = [];
+        for (const row of (visitResult.data || [])) {
+          entries.push({
+            date: row.visit_date,
+            patient: row.patients ? row.patients.full_name : 'Unknown',
+            source: 'Visit',
+            amount: Number(row.fee_amount)
+          });
+        }
+        for (const row of (apptResult.data || [])) {
+          entries.push({
+            date: row.appointment_date,
+            patient: row.patients ? row.patients.full_name : 'Unknown',
+            source: 'Consultation',
+            amount: Number(row.consultation_fee)
+          });
+        }
+
+        entries.sort(function (a, b) { return b.date.localeCompare(a.date); });
+
+        let monthTotal = 0;
+        let todayTotal = 0;
+        const today = todayStr();
+        for (const e of entries) {
+          monthTotal += e.amount;
+          if (e.date === today) todayTotal += e.amount;
+        }
+        document.getElementById('revenueMonthTotal').textContent = 'Rs. ' + monthTotal.toLocaleString();
+        document.getElementById('revenueTodayTotal').textContent = 'Rs. ' + todayTotal.toLocaleString();
+        document.getElementById('revenueCount').textContent = entries.length;
+
+        if (entries.length === 0) {
+          document.getElementById('revenueHistoryList').innerHTML =
+            '<tr><td colspan="4" class="empty-state">No paid entries in this date range</td></tr>';
+          return;
+        }
+
+        let html = '';
+        for (const e of entries) {
+          html += '<tr>';
+          html += '<td style="font-family:monospace;">' + e.date + '</td>';
+          html += '<td style="font-weight:500;">' + e.patient + '</td>';
+          html += '<td>' + e.source + '</td>';
+          html += '<td style="font-weight:600; color:var(--success);">Rs. ' + e.amount.toLocaleString() + '</td>';
+          html += '</tr>';
+        }
+        document.getElementById('revenueHistoryList').innerHTML = html;
       }
 
       // Counts visits.diagnosis_category for the current calendar month,
@@ -1667,7 +1816,7 @@
           patient_id: currentDetailPatientId,
           doctor_id: doctorId,
           visit_date: date,
-          diagnosis_category: document.getElementById('visitDiagnosisCategory').value || null,
+          diagnosis_category: document.getElementById('visitDiagnosisCategory').value.trim() || null,
           diagnosis: document.getElementById('visitDiagnosis').value.trim() || null,
           prescription: document.getElementById('visitPrescription').value.trim() || null,
           follow_up_date: document.getElementById('visitFollowUp').value || null,
@@ -1681,6 +1830,70 @@
 
         ['visitDiagnosisCategory','visitDiagnosis','visitPrescription','visitFollowUp','visitFee'].forEach(id => document.getElementById(id).value = '');
         await loadVisitHistory(currentDetailPatientId);
+      }
+
+      // ---------------------------------------------------------------
+      // DIAGNOSIS CATEGORY AUTOCOMPLETE
+      // A fixed suggestion list (common general-clinic conditions, plus
+      // seasonal/regional ones relevant to Karachi like Dengue and
+      // Malaria) shown as the doctor types. Selecting a suggestion fills
+      // the field; typing something not on the list is still allowed and
+      // saved as-is - this is a helper, not a restriction.
+      // ---------------------------------------------------------------
+      const COMMON_CONDITIONS = [
+        'Flu / Viral Fever',
+        'Common Cold',
+        'Dengue Fever',
+        'Malaria',
+        'Typhoid',
+        'Hypertension',
+        'Diabetes',
+        'Gastroenteritis / Stomach Issues',
+        'Skin Infection',
+        'Respiratory Infection',
+        'Chest Infection',
+        'Allergy',
+        'Injury / Wound',
+        'Migraine / Headache',
+        'Urinary Tract Infection',
+        'Chikungunya',
+        'COVID-19',
+        'Anemia',
+        'Asthma',
+        'Routine Checkup',
+        'Vaccination',
+        'Other'
+      ];
+
+      function filterDiagnosisCategory() {
+        const query = document.getElementById('visitDiagnosisCategory').value.trim().toLowerCase();
+        const list = document.getElementById('diagnosisCategoryList');
+
+        if (!query) {
+          list.classList.remove('open');
+          list.innerHTML = '';
+          return;
+        }
+
+        const matches = COMMON_CONDITIONS.filter(function (c) {
+          return c.toLowerCase().includes(query);
+        });
+
+        if (matches.length === 0) {
+          list.classList.remove('open');
+          list.innerHTML = '';
+          return;
+        }
+
+        list.innerHTML = matches.map(function (c) {
+          return '<div class="autocomplete-item" data-condition="' + c + '"><strong>' + c + '</strong></div>';
+        }).join('');
+        list.classList.add('open');
+      }
+
+      function selectDiagnosisCategory(condition) {
+        document.getElementById('visitDiagnosisCategory').value = condition;
+        document.getElementById('diagnosisCategoryList').classList.remove('open');
       }
 
       // Opens a print-formatted prescription slip in a new tab and triggers
@@ -1778,6 +1991,89 @@
         window.open(url, '_blank', 'width=680,height=820');
         // Blob URL is not revoked here - revoking before the popup finishes
         // loading would blank the window. The browser frees it when the tab closes.
+      }
+
+      // Prints a full patient profile: basic info + complete visit history
+      // (every diagnosis category, detail, prescription, and date on record).
+      // No photo - that requires file storage, deliberately not built yet.
+      // Uses the exact same blob-URL + split-closing-tags pattern as
+      // printPrescription() above, for the same injection-safety reason.
+      function printPatientProfile() {
+        const patient = allPatients.find(p => p.id === currentDetailPatientId);
+        if (!patient) return;
+        const clinicName = document.getElementById('sidebarClinicName').textContent
+          + ' ' + document.getElementById('sidebarClinicSubtitle').textContent;
+
+        const CLOSE_STYLE = '</' + 'style>';
+        const CLOSE_HEAD  = '</' + 'head>';
+        const OPEN_BODY   = '<' + 'body>';
+        const CLOSE_BODY  = '</' + 'body>';
+        const CLOSE_HTML  = '</' + 'html>';
+        const CLOSE_TABLE = '</' + 'table>';
+
+        let historyRows = '';
+        if (currentVisitsCache.length === 0) {
+          historyRows = '<tr><td colspan="4" style="text-align:center;color:#5f8a86;padding:16px;">No visits recorded</td></tr>';
+        } else {
+          for (const v of currentVisitsCache) {
+            historyRows += '<tr>';
+            historyRows += '<td>' + v.visit_date + '</td>';
+            historyRows += '<td>' + (v.diagnosis_category || v.diagnosis || '-') + '</td>';
+            historyRows += '<td>' + (v.prescription || '-') + '</td>';
+            historyRows += '<td>' + (v.staff ? v.staff.full_name : 'N/A') + '</td>';
+            historyRows += '</tr>';
+          }
+        }
+
+        const lines = [
+          '<!DOCTYPE html>',
+          '<html lang="en">',
+          '<head>',
+          '<meta charset="UTF-8">',
+          '<title>Patient Profile - ' + patient.full_name + '</title>',
+          '<style>',
+          'body{font-family:Segoe UI,sans-serif;padding:40px;color:#134e4a;max-width:800px;margin:0 auto;}',
+          '.hdr{text-align:center;border-bottom:3px solid #0d9488;padding-bottom:16px;margin-bottom:24px;}',
+          '.hdr h1{color:#0d9488;font-size:22px;margin:0 0 4px;}',
+          '.hdr p{font-size:12px;color:#5f8a86;margin:0;}',
+          '.infoGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-bottom:24px;font-size:14px;}',
+          '.infoGrid div strong{color:#5f8a86;font-size:11px;text-transform:uppercase;display:block;margin-bottom:2px;}',
+          'table{width:100%;border-collapse:collapse;margin-top:8px;}',
+          'th{background:#f0fdfa;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#134e4a;border-bottom:2px solid #d1fae5;}',
+          'td{padding:9px 12px;border-bottom:1px solid #d1fae5;font-size:13px;}',
+          'h3{font-size:13px;text-transform:uppercase;color:#5f8a86;margin:24px 0 6px;}',
+          '#profilePrintBtn{display:block;margin:36px auto 0;padding:10px 28px;',
+          '  background:#0d9488;color:#fff;border:none;border-radius:8px;',
+          '  font-size:15px;font-weight:600;cursor:pointer;}',
+          '@media print{#profilePrintBtn{display:none;}}',
+          CLOSE_STYLE,
+          CLOSE_HEAD,
+          OPEN_BODY,
+          '<div class="hdr"><h1>' + clinicName + '</h1><p>Patient Profile</p></div>',
+          '<div class="infoGrid">',
+          '<div><strong>Patient ID</strong>' + patient.patient_code + '</div>',
+          '<div><strong>Full Name</strong>' + patient.full_name + '</div>',
+          '<div><strong>Age</strong>' + (patient.age != null ? patient.age : 'N/A') + '</div>',
+          '<div><strong>Gender</strong>' + (patient.gender || 'N/A') + '</div>',
+          '<div><strong>Phone</strong>' + (patient.phone || 'N/A') + '</div>',
+          '<div><strong>Address</strong>' + (patient.address || 'N/A') + '</div>',
+          '<div><strong>Registered</strong>' + new Date(patient.registered_at).toLocaleDateString() + '</div>',
+          '<div><strong>Total Visits</strong>' + currentVisitsCache.length + '</div>',
+          '</div>',
+          '<h3>Visit History</h3>',
+          '<table>',
+          '<thead><tr><th>Date</th><th>Condition</th><th>Prescription</th><th>Doctor</th></tr></thead>',
+          '<tbody>' + historyRows + '</tbody>',
+          CLOSE_TABLE,
+          '<button id="profilePrintBtn" onclick="window.print()">Print / Save as PDF</button>',
+          CLOSE_BODY,
+          CLOSE_HTML
+        ];
+
+        const html = lines.join('\n');
+        const blob = new Blob([html], { type: 'text/html' });
+        const url  = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'width=760,height=860');
       }
 
       /* ============================================================
@@ -2297,6 +2593,7 @@
         document.getElementById('cancelPatientBtn').addEventListener('click', hideAddPatientForm);
         document.getElementById('patientSearch').addEventListener('input', filterPatients);
         document.getElementById('backToPatientListBtn').addEventListener('click', closePatientDetail);
+        document.getElementById('printProfileBtn').addEventListener('click', printPatientProfile);
         document.getElementById('saveVisitBtn').addEventListener('click', handleAddVisit);
 
         // Clicking a patient row opens their detail view. Clicking a Print
@@ -2333,6 +2630,21 @@
             selectExistingPatientForWalkIn(item.getAttribute('data-patient-id'));
           }
         });
+
+        // Diagnosis category autocomplete (Log New Visit form)
+        document.getElementById('visitDiagnosisCategory').addEventListener('input', filterDiagnosisCategory);
+        document.getElementById('visitDiagnosisCategory').addEventListener('blur', function () {
+          setTimeout(function () {
+            document.getElementById('diagnosisCategoryList').classList.remove('open');
+          }, 180);
+        });
+        document.getElementById('diagnosisCategoryList').addEventListener('mousedown', function (event) {
+          const item = event.target.closest('.autocomplete-item');
+          if (item) {
+            event.preventDefault();
+            selectDiagnosisCategory(item.getAttribute('data-condition'));
+          }
+        });
         enableEnterKeyFlow(['quickName', 'quickPhone', 'quickAge', 'quickComplaint', 'quickFee', 'quickDate', 'quickDoctor'], 'saveQuickWalkInBtn');
         document.getElementById('cancelQuickWalkInBtn').addEventListener('click', hideQuickWalkInForm);
         document.getElementById('undoLastWalkInBtn').addEventListener('click', undoLastWalkIn);
@@ -2348,6 +2660,7 @@
           document.getElementById('quickFee').value = fee;
         });
         document.getElementById('showAddAppointmentBtn').addEventListener('click', showAddAppointmentForm);
+        document.getElementById('revenueFilterBtn').addEventListener('click', loadRevenuePage);
         document.getElementById('saveAppointmentBtn').addEventListener('click', handleAddAppointment);
         enableEnterKeyFlow(
           ['apptPatient', 'apptDoctor', 'apptDate', 'apptTime', 'apptToken', 'apptNotes'],
