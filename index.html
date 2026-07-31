@@ -532,6 +532,11 @@
               <i class="fas fa-money-bill-wave"></i><span>Revenue</span>
             </button>
           </li>
+          <li class="nav-item">
+            <button class="nav-link" data-page="conditions">
+              <i class="fas fa-virus"></i><span>Conditions</span>
+            </button>
+          </li>
         </ul>
 
         <button class="logout-btn" id="logoutBtn">
@@ -1233,6 +1238,57 @@
               </table>
             </div>
           </div>
+
+          <!-- ================= CONDITIONS =================
+               Three-level drill-down, all inside one page div:
+               1. conditionsRankedView - ranked list of conditions by
+                  how many DISTINCT patients have had each one (not
+                  visit count - a patient visited 3 times for Dengue
+                  should count once, not three times, for this ranking).
+               2. conditionPatientsView - hidden until a condition is
+                  clicked, lists every patient who has that condition
+                  in their visit history.
+               3. Clicking a patient in that list does NOT build a new
+                  view - it calls showPage('patients') then
+                  openPatientDetail(id), reusing the existing Patient
+                  Detail view exactly as if you'd clicked them from the
+                  normal Patients list. No duplicated profile UI. -->
+          <div class="page" id="page-conditions">
+            <div style="margin-bottom: 26px;">
+              <h2 style="margin-bottom: 4px;">Conditions</h2>
+              <p style="color: var(--text-light);">Ranked by number of patients affected</p>
+            </div>
+
+            <div id="conditionsRankedView" class="card">
+              <table>
+                <thead>
+                  <tr><th>Rank</th><th>Condition</th><th>Patients</th><th></th></tr>
+                </thead>
+                <tbody id="conditionsRankedList">
+                  <tr><td colspan="4" class="empty-state">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="conditionPatientsView" style="display:none;">
+              <div style="margin-bottom:16px;">
+                <button class="btn btn-secondary" id="backToConditionsBtn"><i class="fas fa-arrow-left"></i> Back to Conditions</button>
+              </div>
+              <div class="card" style="margin-bottom:16px;">
+                <h3 id="conditionPatientsTitle" style="margin:0;"></h3>
+              </div>
+              <div class="card">
+                <table>
+                  <thead>
+                    <tr><th>Patient ID</th><th>Full Name</th><th>Age</th><th>Last Visit for This</th><th></th></tr>
+                  </thead>
+                  <tbody id="conditionPatientsList">
+                    <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -1392,11 +1448,16 @@
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         document.querySelector('.nav-link[data-page="' + pageId + '"]').classList.add('active');
 
-        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue' };
+        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue', conditions: 'Conditions' };
         document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
 
         if (pageId === 'revenue') {
           loadRevenuePage();
+        }
+        if (pageId === 'conditions') {
+          document.getElementById('conditionPatientsView').style.display = 'none';
+          document.getElementById('conditionsRankedView').style.display = 'block';
+          loadConditionsRanked();
         }
       }
 
@@ -1555,6 +1616,116 @@
           html += '</tr>';
         }
         document.getElementById('revenueHistoryList').innerHTML = html;
+      }
+
+      // ---------------------------------------------------------------
+      // CONDITIONS DRILL-DOWN
+      // Cache of { condition -> [ { patientId, patientName, lastVisitDate } ] }
+      // so clicking a condition doesn't need a new query - the ranked list
+      // and the drill-down list are built from one query, once.
+      // ---------------------------------------------------------------
+      let conditionsCache = {};
+
+      async function loadConditionsRanked() {
+        const result = await supabaseClient
+          .from('visits')
+          .select('visit_date, diagnosis_category, patient_id, patients(full_name)')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .not('diagnosis_category', 'is', null)
+          .order('visit_date', { ascending: false });
+
+        if (result.error) {
+          document.getElementById('conditionsRankedList').innerHTML =
+            '<tr><td colspan="4" class="empty-state" style="color:#dc2626;">Error: ' + result.error.message + '</td></tr>';
+          return;
+        }
+
+        conditionsCache = {};
+        for (const v of (result.data || [])) {
+          const cond = v.diagnosis_category;
+          if (!conditionsCache[cond]) conditionsCache[cond] = {};
+          // Keyed by patient_id so each patient only counts once per
+          // condition regardless of how many visits they've had for it.
+          // Results are already ordered newest-first, so the first time
+          // we see a patient for this condition is their latest visit.
+          if (!conditionsCache[cond][v.patient_id]) {
+            conditionsCache[cond][v.patient_id] = {
+              patientId: v.patient_id,
+              patientName: v.patients ? v.patients.full_name : 'Unknown',
+              lastVisitDate: v.visit_date
+            };
+          }
+        }
+
+        const ranked = Object.keys(conditionsCache)
+          .map(function (cond) {
+            return { condition: cond, count: Object.keys(conditionsCache[cond]).length };
+          })
+          .sort(function (a, b) { return b.count - a.count; });
+
+        if (ranked.length === 0) {
+          document.getElementById('conditionsRankedList').innerHTML =
+            '<tr><td colspan="4" class="empty-state">No categorized visits recorded yet</td></tr>';
+          return;
+        }
+
+        let html = '';
+        for (let i = 0; i < ranked.length; i++) {
+          const r = ranked[i];
+          html += '<tr class="condition-row" data-condition="' + r.condition + '" style="cursor:pointer;">';
+          html += '<td style="font-weight:700; color:var(--primary);">#' + (i + 1) + '</td>';
+          html += '<td style="font-weight:500;">' + r.condition + '</td>';
+          html += '<td>' + r.count + '</td>';
+          html += '<td><button class="btn btn-secondary view-condition-btn" data-condition="' + r.condition + '" style="padding:5px 12px; font-size:12.5px;">View Patients</button></td>';
+          html += '</tr>';
+        }
+        document.getElementById('conditionsRankedList').innerHTML = html;
+      }
+
+      function openConditionPatients(condition) {
+        const patientsForCondition = conditionsCache[condition];
+        if (!patientsForCondition) return;
+
+        document.getElementById('conditionsRankedView').style.display = 'none';
+        document.getElementById('conditionPatientsView').style.display = 'block';
+        document.getElementById('conditionPatientsTitle').textContent =
+          condition + ' - ' + Object.keys(patientsForCondition).length + ' patient(s)';
+
+        const rows = Object.values(patientsForCondition)
+          .sort(function (a, b) { return b.lastVisitDate.localeCompare(a.lastVisitDate); });
+
+        let html = '';
+        for (const row of rows) {
+          const fullPatient = allPatients.find(function (p) { return p.id === row.patientId; });
+          const code = fullPatient ? fullPatient.patient_code : '';
+          const age = fullPatient && fullPatient.age != null ? fullPatient.age : 'N/A';
+          html += '<tr class="condition-patient-row" data-patient-id="' + row.patientId + '" style="cursor:pointer;">';
+          html += '<td><span class="patient-code-badge">' + code + '</span></td>';
+          html += '<td style="font-weight:500;">' + row.patientName + '</td>';
+          html += '<td>' + age + '</td>';
+          html += '<td>' + row.lastVisitDate + '</td>';
+          html += '<td><i class="fas fa-chevron-right" style="color:var(--text-light);"></i></td>';
+          html += '</tr>';
+        }
+        document.getElementById('conditionPatientsList').innerHTML = html;
+      }
+
+      function backToConditionsRanked() {
+        document.getElementById('conditionPatientsView').style.display = 'none';
+        document.getElementById('conditionsRankedView').style.display = 'block';
+      }
+
+      // Clicking a patient inside a condition's patient list jumps straight
+      // to the normal Patients page and opens that patient's existing
+      // Detail view (profile + visit history) - reuses openPatientDetail()
+      // exactly as-is, no separate/duplicated profile UI for this path.
+      function goToPatientFromCondition(patientId) {
+        showPage('patients');
+        document.querySelector('.nav-link[data-page="patients"]').classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(function (l) {
+          if (l.getAttribute('data-page') !== 'patients') l.classList.remove('active');
+        });
+        openPatientDetail(patientId);
       }
 
       // Counts visits.diagnosis_category for the current calendar month,
@@ -2609,6 +2780,26 @@
           const printBtn = event.target.closest('.print-visit-btn');
           if (printBtn) {
             printPrescription(parseInt(printBtn.getAttribute('data-visit-index')));
+            return;
+          }
+          // Conditions page: clicking a ranked condition row or its
+          // "View Patients" button both open that condition's patient list.
+          const conditionRow = event.target.closest('.condition-row, .view-condition-btn');
+          if (conditionRow) {
+            openConditionPatients(conditionRow.getAttribute('data-condition'));
+            return;
+          }
+          // Conditions page: clicking a patient inside a condition's list
+          // jumps straight to that patient's real profile (goToPatientFromCondition
+          // reuses openPatientDetail() - no separate/duplicated UI).
+          const conditionPatientRow = event.target.closest('.condition-patient-row');
+          if (conditionPatientRow) {
+            goToPatientFromCondition(conditionPatientRow.getAttribute('data-patient-id'));
+            return;
+          }
+          const backToConditionsBtn = event.target.closest('#backToConditionsBtn');
+          if (backToConditionsBtn) {
+            backToConditionsRanked();
             return;
           }
         });
