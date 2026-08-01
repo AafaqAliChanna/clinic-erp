@@ -537,6 +537,16 @@
               <i class="fas fa-virus"></i><span>Conditions</span>
             </button>
           </li>
+          <!-- Hidden by default, shown only for Doctor/Manager via
+               applyRoleVisibility(). The actual authorization is enforced
+               server-side by the create-staff Edge Function (checks
+               requesting_user_role), so hiding this in the UI is a
+               convenience, not the real security boundary. -->
+          <li class="nav-item" id="staffMgmtNavItem" style="display:none;">
+            <button class="nav-link" data-page="staffmgmt">
+              <i class="fas fa-users-cog"></i><span>Staff Management</span>
+            </button>
+          </li>
         </ul>
 
         <button class="logout-btn" id="logoutBtn">
@@ -1239,6 +1249,75 @@
             </div>
           </div>
 
+          <!-- ================= STAFF MANAGEMENT (Doctor / Manager only) =================
+               Nav item hidden for other roles (UI convenience). Real
+               authorization happens server-side in the create-staff Edge
+               Function, which checks requesting_user_role before doing
+               anything - so this page being reachable by URL manipulation
+               would still fail safely at the function itself. -->
+          <div class="page" id="page-staffmgmt">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin-bottom:4px;">Staff Management</h2>
+                <p style="color:var(--text-light);">Add staff, assign roles, manage accounts</p>
+              </div>
+              <button class="btn btn-primary" id="showAddStaffBtn">
+                <i class="fas fa-user-plus"></i> Add Staff Member
+              </button>
+            </div>
+
+            <!-- Add Staff form. Calls the create-staff Edge Function on
+                 save - this is the only path that creates a real login,
+                 since the browser's anon key cannot create Auth users
+                 directly (that requires the service role key, which only
+                 exists inside the Edge Function, never in the browser). -->
+            <div id="addStaffForm" class="card" style="display:none; margin-bottom:22px;">
+              <div class="form-row">
+                <div>
+                  <label class="field-label" for="staffFullName">Full Name *</label>
+                  <input id="staffFullName" placeholder="Full name">
+                </div>
+                <div>
+                  <label class="field-label" for="staffEmail">Email (login) *</label>
+                  <input id="staffEmail" type="email" placeholder="name@clinic.com">
+                </div>
+                <div>
+                  <label class="field-label" for="staffPassword">Temporary Password *</label>
+                  <input id="staffPassword" type="text" placeholder="Min 6 characters">
+                </div>
+                <div>
+                  <label class="field-label" for="staffRoleSelect">Role *</label>
+                  <select id="staffRoleSelect">
+                    <option value="Receptionist">Receptionist</option>
+                    <option value="Nurse">Nurse</option>
+                    <option value="Assistant">Assistant</option>
+                    <option value="Doctor">Doctor</option>
+                    <option value="Manager">Manager</option>
+                  </select>
+                </div>
+              </div>
+              <p style="color:var(--text-light); font-size:12.5px; margin-bottom:14px;">
+                Share the email and password with the new staff member directly - they can log in immediately and should change their password after first login.
+              </p>
+              <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" id="saveStaffBtn"><i class="fas fa-check"></i> Create Account</button>
+                <button class="btn btn-secondary" id="cancelAddStaffBtn">Cancel</button>
+              </div>
+              <p id="addStaffStatus" style="margin-top:10px; font-size:13px;"></p>
+            </div>
+
+            <div class="card">
+              <table>
+                <thead>
+                  <tr><th>Full Name</th><th>Role</th><th></th></tr>
+                </thead>
+                <tbody id="staffMgmtList">
+                  <tr><td colspan="3" class="empty-state">Loading staff...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- ================= CONDITIONS =================
                Three-level drill-down, all inside one page div:
                1. conditionsRankedView - ranked list of conditions by
@@ -1448,7 +1527,7 @@
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         document.querySelector('.nav-link[data-page="' + pageId + '"]').classList.add('active');
 
-        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue', conditions: 'Conditions' };
+        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue', conditions: 'Conditions', staffmgmt: 'Staff Management' };
         document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
 
         if (pageId === 'revenue') {
@@ -1458,6 +1537,9 @@
           document.getElementById('conditionPatientsView').style.display = 'none';
           document.getElementById('conditionsRankedView').style.display = 'block';
           loadConditionsRanked();
+        }
+        if (pageId === 'staffmgmt') {
+          loadStaffManagementList();
         }
       }
 
@@ -1488,6 +1570,7 @@
         document.getElementById('visitFeeWrapper').style.display = isDoctor  ? 'block' : 'none';
         document.getElementById('revenueCard').style.display     = canSeeRev ? 'block' : 'none';
         document.getElementById('revenueNavItem').style.display  = canSeeRev ? 'block' : 'none';
+        document.getElementById('staffMgmtNavItem').style.display = canSeeRev ? 'block' : 'none';
         document.getElementById('defaultFeeCard').style.display  = isManager ? 'block' : 'none';
         // Populate the default fee input with current stored value
         if (isManager) {
@@ -1616,6 +1699,145 @@
           html += '</tr>';
         }
         document.getElementById('revenueHistoryList').innerHTML = html;
+      }
+
+      // ---------------------------------------------------------------
+      // STAFF MANAGEMENT
+      // ---------------------------------------------------------------
+
+      // Lists every staff member with an inline role dropdown - changing
+      // it immediately reassigns their role via a plain update (this is
+      // just an existing-row edit, not account creation, so it doesn't
+      // need the Edge Function - it's a normal RLS-protected write).
+      async function loadStaffManagementList() {
+        const { data, error } = await supabaseClient
+          .from('staff')
+          .select('id, full_name, role')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .order('full_name', { ascending: true });
+
+        if (error) {
+          document.getElementById('staffMgmtList').innerHTML =
+            '<tr><td colspan="3" class="empty-state" style="color:#dc2626;">Error: ' + error.message + '</td></tr>';
+          return;
+        }
+
+        const staff = data || [];
+        if (staff.length === 0) {
+          document.getElementById('staffMgmtList').innerHTML = '<tr><td colspan="3" class="empty-state">No staff yet</td></tr>';
+          return;
+        }
+
+        const roles = ['Receptionist', 'Nurse', 'Assistant', 'Doctor', 'Manager'];
+        let html = '';
+        for (const s of staff) {
+          let roleSelectHtml = '<select class="staff-role-select" data-staff-id="' + s.id + '" style="padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); font-size:13px;">';
+          for (const r of roles) {
+            roleSelectHtml += '<option value="' + r + '"' + (r === s.role ? ' selected' : '') + '>' + r + '</option>';
+          }
+          roleSelectHtml += '</select>';
+
+          html += '<tr>';
+          html += '<td style="font-weight:500;">' + s.full_name + '</td>';
+          html += '<td>' + roleSelectHtml + '</td>';
+          html += '<td></td>';
+          html += '</tr>';
+        }
+        document.getElementById('staffMgmtList').innerHTML = html;
+      }
+
+      // Reassigns an existing staff member's role. This is a plain table
+      // update, allowed by the appointments-style open RLS on staff for
+      // authenticated clinic members - not the account-creation path.
+      async function updateStaffRole(staffId, newRole) {
+        const { error } = await supabaseClient
+          .from('staff')
+          .update({ role: newRole })
+          .eq('id', staffId)
+          .eq('clinic_id', CURRENT_CLINIC_ID);
+
+        if (error) {
+          alert('Error updating role: ' + error.message);
+          await loadStaffManagementList();
+        }
+      }
+
+      function showAddStaffForm() {
+        document.getElementById('addStaffForm').style.display = 'block';
+        document.getElementById('addStaffStatus').textContent = '';
+        document.getElementById('staffFullName').focus();
+      }
+
+      function hideAddStaffForm() {
+        document.getElementById('addStaffForm').style.display = 'none';
+        ['staffFullName', 'staffEmail', 'staffPassword'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('addStaffStatus').textContent = '';
+      }
+
+      // Calls the create-staff Edge Function - the ONLY path that can
+      // create a real login, since the browser's anon key cannot create
+      // Auth users (that requires the service role key, which lives only
+      // inside the deployed function, never in this file). The function
+      // also re-checks the caller's role server-side, so this frontend
+      // check is a convenience, not the real security boundary.
+      async function handleAddStaff() {
+        const fullName = document.getElementById('staffFullName').value.trim();
+        const email = document.getElementById('staffEmail').value.trim();
+        const password = document.getElementById('staffPassword').value;
+        const role = document.getElementById('staffRoleSelect').value;
+        const statusEl = document.getElementById('addStaffStatus');
+
+        if (!fullName || !email || !password || !role) {
+          statusEl.style.color = '#dc2626';
+          statusEl.textContent = 'All fields are required.';
+          return;
+        }
+        if (password.length < 6) {
+          statusEl.style.color = '#dc2626';
+          statusEl.textContent = 'Password must be at least 6 characters.';
+          return;
+        }
+
+        statusEl.style.color = 'var(--text-light)';
+        statusEl.textContent = 'Creating account...';
+
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        const accessToken = sessionData.session ? sessionData.session.access_token : '';
+
+        const response = await fetch(
+          'https://rbgcyrlaoygugizuxste.supabase.co/functions/v1/create-staff',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + accessToken
+            },
+            body: JSON.stringify({
+              email: email,
+              password: password,
+              full_name: fullName,
+              role: role,
+              requesting_clinic_id: CURRENT_CLINIC_ID,
+              requesting_user_role: CURRENT_STAFF_ROLE
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          statusEl.style.color = '#dc2626';
+          statusEl.textContent = result.error || 'Failed to create account.';
+          return;
+        }
+
+        statusEl.style.color = 'var(--success)';
+        statusEl.textContent = fullName + ' added successfully.';
+        await loadStaffManagementList();
+
+        setTimeout(function () {
+          hideAddStaffForm();
+        }, 1200);
       }
 
       // ---------------------------------------------------------------
@@ -2852,6 +3074,9 @@
         });
         document.getElementById('showAddAppointmentBtn').addEventListener('click', showAddAppointmentForm);
         document.getElementById('revenueFilterBtn').addEventListener('click', loadRevenuePage);
+        document.getElementById('showAddStaffBtn').addEventListener('click', showAddStaffForm);
+        document.getElementById('saveStaffBtn').addEventListener('click', handleAddStaff);
+        document.getElementById('cancelAddStaffBtn').addEventListener('click', hideAddStaffForm);
         document.getElementById('saveAppointmentBtn').addEventListener('click', handleAddAppointment);
         enableEnterKeyFlow(
           ['apptPatient', 'apptDoctor', 'apptDate', 'apptTime', 'apptToken', 'apptNotes'],
@@ -2868,6 +3093,13 @@
           const select = event.target.closest('.status-select');
           if (select) {
             updateAppointmentStatus(select.getAttribute('data-appt-id'), select.value);
+          }
+        });
+
+        document.getElementById('staffMgmtList').addEventListener('change', function (event) {
+          const select = event.target.closest('.staff-role-select');
+          if (select) {
+            updateStaffRole(select.getAttribute('data-staff-id'), select.value);
           }
         });
 
