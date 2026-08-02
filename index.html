@@ -547,6 +547,11 @@
               <i class="fas fa-users-cog"></i><span>Staff Management</span>
             </button>
           </li>
+          <li class="nav-item">
+            <button class="nav-link" data-page="services">
+              <i class="fas fa-syringe"></i><span>Services</span>
+            </button>
+          </li>
         </ul>
 
         <button class="logout-btn" id="logoutBtn">
@@ -885,6 +890,17 @@
                 <!-- ===== P - PLAN (treatment/follow-up) ===== -->
                 <div style="border-left:3px solid var(--success); padding-left:14px; margin:18px 0;">
                   <h5 style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--success); margin-bottom:10px;">P - Plan</h5>
+
+                  <!-- Services checklist - filled by populateVisitServiceCheckboxes()
+                       when the patient detail view opens. Multiple services can be
+                       checked per visit (e.g. Consultation + Injection + Dressing in
+                       one visit) - each checked service becomes its own row in
+                       visit_services when the visit is saved. -->
+                  <div style="margin-bottom:16px;">
+                    <label class="field-label">Services Provided</label>
+                    <div id="visitServicesChecklist" style="display:flex; flex-wrap:wrap; gap:10px 18px; padding:10px 0;"></div>
+                  </div>
+
                   <div class="form-row">
                     <div>
                       <label class="field-label" for="visitTreatmentPlan">Treatment Plan</label>
@@ -1370,6 +1386,51 @@
             </div>
           </div>
 
+          <!-- ================= SERVICES =================
+               Visible to all staff (not role-gated) - anyone logging a
+               visit needs to see and select services. Adding a NEW custom
+               service is open to everyone too, since a receptionist or
+               nurse may need to add a one-off service on the spot. -->
+          <div class="page" id="page-services">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin-bottom:4px;">Service Management</h2>
+                <p style="color:var(--text-light);">Clinic services and default prices</p>
+              </div>
+              <button class="btn btn-primary" id="showAddServiceBtn">
+                <i class="fas fa-plus"></i> Add Custom Service
+              </button>
+            </div>
+
+            <div id="addServiceForm" class="card" style="display:none; margin-bottom:22px;">
+              <div class="form-row">
+                <div>
+                  <label class="field-label" for="newServiceName">Service Name *</label>
+                  <input id="newServiceName" placeholder="e.g. Wound Suturing">
+                </div>
+                <div>
+                  <label class="field-label" for="newServicePrice">Default Price (Rs.)</label>
+                  <input id="newServicePrice" type="number" min="0" placeholder="e.g. 500">
+                </div>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" id="saveServiceBtn"><i class="fas fa-check"></i> Save Service</button>
+                <button class="btn btn-secondary" id="cancelAddServiceBtn">Cancel</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <table>
+                <thead>
+                  <tr><th>Service</th><th>Default Price</th><th>Type</th></tr>
+                </thead>
+                <tbody id="servicesList">
+                  <tr><td colspan="3" class="empty-state">Loading services...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- ================= CONDITIONS =================
                Three-level drill-down, all inside one page div:
                1. conditionsRankedView - ranked list of conditions by
@@ -1579,7 +1640,7 @@
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         document.querySelector('.nav-link[data-page="' + pageId + '"]').classList.add('active');
 
-        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue', conditions: 'Conditions', staffmgmt: 'Staff Management' };
+        const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue', conditions: 'Conditions', staffmgmt: 'Staff Management', services: 'Service Management' };
         document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
 
         if (pageId === 'revenue') {
@@ -1593,6 +1654,9 @@
         if (pageId === 'staffmgmt') {
           loadStaffManagementList();
         }
+        if (pageId === 'services') {
+          loadServicesPage();
+        }
       }
 
       /* ============================================================
@@ -1604,6 +1668,7 @@
         await populateAppointmentDropdowns();
         await loadQueue();
         await loadCommonConditions();
+        await loadServices();
         applyRoleVisibility();
         if (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager') {
           await loadRevenue();
@@ -1890,6 +1955,108 @@
         setTimeout(function () {
           hideAddStaffForm();
         }, 1200);
+      }
+
+      // ---------------------------------------------------------------
+      // SERVICE MANAGEMENT
+      // ---------------------------------------------------------------
+
+      let servicesCache = []; // full service catalog for this clinic, reused
+                               // by both the Services page and the visit
+                               // form's checkbox list
+
+      async function loadServices() {
+        const { data, error } = await supabaseClient
+          .from('services')
+          .select('id, name, default_price, is_custom')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .order('name', { ascending: true });
+
+        if (error) {
+          console.error('Failed to load services:', error);
+          servicesCache = [];
+          return;
+        }
+        servicesCache = data || [];
+      }
+
+      // Builds the checkbox list in the visit form's Plan section. Each
+      // checkbox's value is the service id - checked ones get read in
+      // handleAddVisit() and inserted into visit_services after the visit
+      // itself is saved.
+      async function populateVisitServiceCheckboxes() {
+        if (servicesCache.length === 0) {
+          await loadServices();
+        }
+        const container = document.getElementById('visitServicesChecklist');
+        if (servicesCache.length === 0) {
+          container.innerHTML = '<span style="color:var(--text-light); font-size:13px;">No services set up yet - add some in the Services page.</span>';
+          return;
+        }
+        container.innerHTML = servicesCache.map(function (s) {
+          return '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">'
+            + '<input type="checkbox" class="visit-service-checkbox" value="' + s.id + '" data-price="' + (s.default_price != null ? s.default_price : '') + '">'
+            + s.name + (s.default_price != null ? ' (Rs. ' + Number(s.default_price).toLocaleString() + ')' : '')
+            + '</label>';
+        }).join('');
+      }
+
+      function renderServicesTable() {
+        const tbody = document.getElementById('servicesList');
+        if (servicesCache.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No services yet</td></tr>';
+          return;
+        }
+        let html = '';
+        for (const s of servicesCache) {
+          html += '<tr>';
+          html += '<td style="font-weight:500;">' + s.name + '</td>';
+          html += '<td>' + (s.default_price != null ? 'Rs. ' + Number(s.default_price).toLocaleString() : 'N/A') + '</td>';
+          html += '<td>' + (s.is_custom ? 'Custom' : 'Standard') + '</td>';
+          html += '</tr>';
+        }
+        tbody.innerHTML = html;
+      }
+
+      async function loadServicesPage() {
+        await loadServices();
+        renderServicesTable();
+      }
+
+      function showAddServiceForm() {
+        document.getElementById('addServiceForm').style.display = 'block';
+        document.getElementById('newServiceName').focus();
+      }
+
+      function hideAddServiceForm() {
+        document.getElementById('addServiceForm').style.display = 'none';
+        document.getElementById('newServiceName').value = '';
+        document.getElementById('newServicePrice').value = '';
+      }
+
+      async function handleAddService() {
+        const name = document.getElementById('newServiceName').value.trim();
+        const priceVal = document.getElementById('newServicePrice').value;
+
+        if (!name) {
+          alert('Service name is required.');
+          return;
+        }
+
+        const { error } = await supabaseClient.from('services').insert({
+          clinic_id: CURRENT_CLINIC_ID,
+          name: name,
+          default_price: priceVal ? Number(priceVal) : null,
+          is_custom: true
+        });
+
+        if (error) {
+          alert('Error adding service: ' + error.message);
+          return;
+        }
+
+        hideAddServiceForm();
+        await loadServicesPage();
       }
 
       // ---------------------------------------------------------------
@@ -2196,6 +2363,7 @@
         document.getElementById('visitDoctor').innerHTML =
           doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
         document.getElementById('visitDate').value = todayStr();
+        await populateVisitServiceCheckboxes();
 
         await loadVisitHistory(patientId);
       }
@@ -2304,7 +2472,7 @@
           return el && el.value.trim() ? el.value.trim() : null;
         }
 
-        const { error } = await supabaseClient.from('visits').insert({
+        const { data: newVisit, error } = await supabaseClient.from('visits').insert({
           clinic_id: CURRENT_CLINIC_ID,
           patient_id: currentDetailPatientId,
           doctor_id: doctorId,
@@ -2328,11 +2496,31 @@
           prescription: readField('visitPrescription'),
           follow_up_date: document.getElementById('visitFollowUp').value || null,
           fee_amount: feeValue
-        });
+        }).select().single();
 
         if (error) {
           alert('Error saving visit: ' + error.message);
           return;
+        }
+
+        // Save whichever services were checked. Each becomes its own row
+        // in visit_services, linked to this visit - this is what allows a
+        // single visit to include multiple services (Consultation +
+        // Injection + Dressing, all logged together).
+        const checkedBoxes = document.querySelectorAll('.visit-service-checkbox:checked');
+        if (checkedBoxes.length > 0) {
+          const serviceRows = Array.from(checkedBoxes).map(function (box) {
+            return {
+              clinic_id: CURRENT_CLINIC_ID,
+              visit_id: newVisit.id,
+              service_id: box.value,
+              price_charged: box.getAttribute('data-price') ? Number(box.getAttribute('data-price')) : null
+            };
+          });
+          const { error: serviceError } = await supabaseClient.from('visit_services').insert(serviceRows);
+          if (serviceError) {
+            alert('Visit saved, but services could not be recorded: ' + serviceError.message);
+          }
         }
 
         [
@@ -2341,6 +2529,7 @@
           'visitDiagnosisCategory', 'visitDiagnosis', 'visitClinicalNotes',
           'visitTreatmentPlan', 'visitPrescription', 'visitFollowUp', 'visitFee'
         ].forEach(id => document.getElementById(id).value = '');
+        document.querySelectorAll('.visit-service-checkbox:checked').forEach(function (box) { box.checked = false; });
         await loadVisitHistory(currentDetailPatientId);
       }
 
@@ -3201,6 +3390,9 @@
         document.getElementById('showAddStaffBtn').addEventListener('click', showAddStaffForm);
         document.getElementById('saveStaffBtn').addEventListener('click', handleAddStaff);
         document.getElementById('cancelAddStaffBtn').addEventListener('click', hideAddStaffForm);
+        document.getElementById('showAddServiceBtn').addEventListener('click', showAddServiceForm);
+        document.getElementById('saveServiceBtn').addEventListener('click', handleAddService);
+        document.getElementById('cancelAddServiceBtn').addEventListener('click', hideAddServiceForm);
         document.getElementById('saveAppointmentBtn').addEventListener('click', handleAddAppointment);
         enableEnterKeyFlow(
           ['apptPatient', 'apptDoctor', 'apptDate', 'apptTime', 'apptToken', 'apptNotes'],
