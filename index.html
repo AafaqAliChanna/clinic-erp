@@ -790,61 +790,114 @@
               </div>
 
               <div class="card" style="margin-bottom: 20px">
-                <h4 style="margin-bottom: 14px">Log New Visit</h4>
+                <h4 style="margin-bottom: 4px">Log New Visit</h4>
+                <p style="color:var(--text-light); font-size:12px; margin-bottom:16px;">
+                  Structured as SOAP notes - Subjective, Objective, Assessment, Plan - standard clinical documentation format.
+                </p>
+
                 <div class="form-row">
                   <div>
-                    <label class="field-label" for="visitDoctor"
-                      >Doctor *</label
-                    >
+                    <label class="field-label" for="visitDoctor">Doctor *</label>
                     <select id="visitDoctor"></select>
                   </div>
                   <div>
-                    <label class="field-label" for="visitDate"
-                      >Visit Date</label
-                    >
+                    <label class="field-label" for="visitDate">Visit Date</label>
                     <input id="visitDate" type="date" />
                   </div>
-                  <div>
-                    <label class="field-label" for="visitFollowUp"
-                      >Follow-up Date</label
-                    >
-                    <input id="visitFollowUp" type="date" />
-                  </div>
                 </div>
-                <div
-                  class="form-row"
-                  style="grid-template-columns: 1fr 1fr 1fr"
-                >
-                  <div>
-                    <label class="field-label" for="visitDiagnosisCategory"
-                      >Diagnosis Category</label
-                    >
-                    <div class="autocomplete-wrapper">
-                      <input
-                        id="visitDiagnosisCategory"
-                        placeholder="Type to search (e.g. Dengue, Fever...)"
-                        autocomplete="off"
-                      />
-                      <div id="diagnosisCategoryList" class="autocomplete-list"></div>
+
+                <!-- ===== S - SUBJECTIVE (patient-reported) ===== -->
+                <div style="border-left:3px solid var(--secondary); padding-left:14px; margin:18px 0;">
+                  <h5 style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--secondary); margin-bottom:10px;">S - Subjective</h5>
+                  <div class="form-row">
+                    <div>
+                      <label class="field-label" for="chiefComplaint">Chief Complaint</label>
+                      <input id="chiefComplaint" placeholder="Patient's main reason for visit" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="visitSymptoms">Symptoms</label>
+                      <input id="visitSymptoms" placeholder="e.g. Fever, cough, body ache" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="visitHistory">Medical History</label>
+                      <input id="visitHistory" placeholder="Relevant past history (optional)" />
                     </div>
                   </div>
-                  <div>
-                    <label class="field-label" for="visitDiagnosis"
-                      >Diagnosis Detail (free text)</label
-                    >
-                    <input
-                      id="visitDiagnosis"
-                      placeholder="e.g. Viral fever, Hypertension..."
-                    />
+                </div>
+
+                <!-- ===== O - OBJECTIVE (clinician-measured) ===== -->
+                <div style="border-left:3px solid var(--primary); padding-left:14px; margin:18px 0;">
+                  <h5 style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--primary); margin-bottom:10px;">O - Objective</h5>
+                  <div class="form-row" style="grid-template-columns:repeat(4, 1fr);">
+                    <div>
+                      <label class="field-label" for="vitalsBp">Blood Pressure</label>
+                      <input id="vitalsBp" placeholder="120/80" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="vitalsPulse">Pulse (bpm)</label>
+                      <input id="vitalsPulse" placeholder="72" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="vitalsTemp">Temperature</label>
+                      <input id="vitalsTemp" placeholder="98.6°F" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="vitalsWeight">Weight</label>
+                      <input id="vitalsWeight" placeholder="70 kg" />
+                    </div>
                   </div>
-                  <div>
-                    <label class="field-label" for="visitPrescription"
-                      >Prescription</label
-                    >
-                    <input
-                      id="visitPrescription"
-                      placeholder="Medicines / instructions"
-                    />
+                  <div class="form-row" style="margin-top:12px;">
+                    <div style="grid-column:1 / -1;">
+                      <label class="field-label" for="visitExamination">Examination Findings</label>
+                      <input id="visitExamination" placeholder="Physical examination notes" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ===== A - ASSESSMENT (diagnosis/reasoning) ===== -->
+                <div style="border-left:3px solid var(--accent); padding-left:14px; margin:18px 0;">
+                  <h5 style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--accent); margin-bottom:10px;">A - Assessment</h5>
+                  <div class="form-row" style="grid-template-columns:1fr 1fr;">
+                    <div>
+                      <label class="field-label" for="visitDiagnosisCategory">Diagnosis Category</label>
+                      <div class="autocomplete-wrapper">
+                        <input
+                          id="visitDiagnosisCategory"
+                          placeholder="Type to search (e.g. Dengue, Fever...)"
+                          autocomplete="off"
+                        />
+                        <div id="diagnosisCategoryList" class="autocomplete-list"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="field-label" for="visitDiagnosis">Diagnosis Detail</label>
+                      <input id="visitDiagnosis" placeholder="e.g. Viral fever, Hypertension..." />
+                    </div>
+                  </div>
+                  <div class="form-row" style="margin-top:12px;">
+                    <div style="grid-column:1 / -1;">
+                      <label class="field-label" for="visitClinicalNotes">Clinical Notes</label>
+                      <input id="visitClinicalNotes" placeholder="Additional clinical reasoning / observations" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ===== P - PLAN (treatment/follow-up) ===== -->
+                <div style="border-left:3px solid var(--success); padding-left:14px; margin:18px 0;">
+                  <h5 style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--success); margin-bottom:10px;">P - Plan</h5>
+                  <div class="form-row">
+                    <div>
+                      <label class="field-label" for="visitTreatmentPlan">Treatment Plan</label>
+                      <input id="visitTreatmentPlan" placeholder="Overall treatment approach" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="visitPrescription">Prescription</label>
+                      <input id="visitPrescription" placeholder="Medicines / instructions" />
+                    </div>
+                    <div>
+                      <label class="field-label" for="visitFollowUp">Follow-up Date</label>
+                      <input id="visitFollowUp" type="date" />
+                    </div>
                   </div>
                   <!-- Hidden by default. Only unhidden by JS (applyRoleVisibility)
                    if the logged-in user's role is Doctor. Even if someone
@@ -852,10 +905,8 @@
                    data still won't come back from Supabase for a non-doctor -
                    the RLS policy on visits enforces that at the database
                    level, not this element's visibility. -->
-                  <div id="visitFeeWrapper" style="display: none">
-                    <label class="field-label" for="visitFee"
-                      >Fee (Rs.) - Doctor only</label
-                    >
+                  <div id="visitFeeWrapper" style="display: none; margin-top:12px;">
+                    <label class="field-label" for="visitFee">Fee (Rs.) - Doctor only</label>
                     <input
                       id="visitFee"
                       type="number"
@@ -864,6 +915,7 @@
                     />
                   </div>
                 </div>
+
                 <button class="btn btn-primary" id="saveVisitBtn">
                   <i class="fas fa-notes-medical"></i> Save Visit
                 </button>
@@ -2158,7 +2210,7 @@
       async function loadVisitHistory(patientId) {
         const { data, error } = await supabaseClient
           .from('visits')
-          .select('visit_date, diagnosis, prescription, follow_up_date, staff(full_name)')
+          .select('visit_date, chief_complaint, symptoms, history, vitals_bp, vitals_pulse, vitals_temp, vitals_weight, examination, diagnosis_category, diagnosis, clinical_notes, treatment_plan, prescription, follow_up_date, staff(full_name)')
           .eq('clinic_id', CURRENT_CLINIC_ID)
           .eq('patient_id', patientId)
           .order('visit_date', { ascending: false });
@@ -2175,21 +2227,62 @@
           return;
         }
 
+        // Visit Timeline: each visit is a summary row plus a hidden detail
+        // row underneath it, toggled open/closed by clicking "View Details".
+        // The detail row shows the full SOAP breakdown for that visit -
+        // this is what makes it a real timeline, not just a flat list.
         let html = '';
         for (let i = 0; i < currentVisitsCache.length; i++) {
           const v = currentVisitsCache[i];
+          const conditionLabel = v.diagnosis_category || v.diagnosis || '-';
+
           html += '<tr>';
           html += '<td style="font-family:monospace;">' + v.visit_date + '</td>';
           html += '<td>' + (v.staff ? v.staff.full_name : 'N/A') + '</td>';
-          html += '<td>' + (v.diagnosis || '-') + '</td>';
+          html += '<td>' + conditionLabel + '</td>';
           html += '<td>' + (v.prescription || '-') + '</td>';
           html += '<td>' + (v.follow_up_date || '-') + '</td>';
+          html += '<td style="white-space:nowrap;">';
+          html += '<button class="btn btn-secondary toggle-visit-detail-btn" data-visit-index="' + i + '" style="padding:6px 10px; font-size:12px;"><i class="fas fa-chevron-down"></i> Details</button> ';
           // data-visit-index instead of passing the object inline - this is
           // exactly the pattern that avoided the earlier syntax-error bug.
-          html += '<td><button class="btn btn-secondary print-visit-btn" data-visit-index="' + i + '" style="padding:6px 12px; font-size:12.5px;"><i class="fas fa-print"></i> Print</button></td>';
+          html += '<button class="btn btn-secondary print-visit-btn" data-visit-index="' + i + '" style="padding:6px 10px; font-size:12px;"><i class="fas fa-print"></i> Print</button>';
+          html += '</td>';
           html += '</tr>';
+
+          html += '<tr class="visit-detail-row" id="visitDetail' + i + '" style="display:none;">';
+          html += '<td colspan="6" style="background:var(--bg-light); padding:16px 20px;">';
+          html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px;">';
+
+          html += '<div><strong style="color:var(--secondary); font-size:11px; text-transform:uppercase;">Subjective</strong>';
+          html += '<p style="margin-top:4px;">Chief Complaint: ' + (v.chief_complaint || '-') + '</p>';
+          html += '<p>Symptoms: ' + (v.symptoms || '-') + '</p>';
+          html += '<p>History: ' + (v.history || '-') + '</p></div>';
+
+          html += '<div><strong style="color:var(--primary); font-size:11px; text-transform:uppercase;">Objective</strong>';
+          html += '<p style="margin-top:4px;">BP: ' + (v.vitals_bp || '-') + ' | Pulse: ' + (v.vitals_pulse || '-') + ' | Temp: ' + (v.vitals_temp || '-') + ' | Weight: ' + (v.vitals_weight || '-') + '</p>';
+          html += '<p>Examination: ' + (v.examination || '-') + '</p></div>';
+
+          html += '<div><strong style="color:var(--accent); font-size:11px; text-transform:uppercase;">Assessment</strong>';
+          html += '<p style="margin-top:4px;">Diagnosis: ' + conditionLabel + (v.diagnosis && v.diagnosis_category ? ' (' + v.diagnosis + ')' : '') + '</p>';
+          html += '<p>Clinical Notes: ' + (v.clinical_notes || '-') + '</p></div>';
+
+          html += '<div><strong style="color:var(--success); font-size:11px; text-transform:uppercase;">Plan</strong>';
+          html += '<p style="margin-top:4px;">Treatment: ' + (v.treatment_plan || '-') + '</p>';
+          html += '<p>Prescription: ' + (v.prescription || '-') + '</p>';
+          html += '<p>Follow-up: ' + (v.follow_up_date || '-') + '</p></div>';
+
+          html += '</div></td></tr>';
         }
         document.getElementById('visitHistoryList').innerHTML = html;
+      }
+
+      // Toggles a single visit's SOAP detail row open/closed.
+      function toggleVisitDetail(index) {
+        const row = document.getElementById('visitDetail' + index);
+        if (row) {
+          row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+        }
       }
 
       async function handleAddVisit() {
@@ -2204,14 +2297,35 @@
         const feeInput = document.getElementById('visitFee');
         const feeValue = feeInput && feeInput.value ? Number(feeInput.value) : null;
 
+        // Small helper: reads a text field by id, trims it, returns null if
+        // empty. Used for every SOAP field to keep the insert call readable.
+        function readField(id) {
+          const el = document.getElementById(id);
+          return el && el.value.trim() ? el.value.trim() : null;
+        }
+
         const { error } = await supabaseClient.from('visits').insert({
           clinic_id: CURRENT_CLINIC_ID,
           patient_id: currentDetailPatientId,
           doctor_id: doctorId,
           visit_date: date,
-          diagnosis_category: document.getElementById('visitDiagnosisCategory').value.trim() || null,
-          diagnosis: document.getElementById('visitDiagnosis').value.trim() || null,
-          prescription: document.getElementById('visitPrescription').value.trim() || null,
+          // Subjective
+          chief_complaint: readField('chiefComplaint'),
+          symptoms: readField('visitSymptoms'),
+          history: readField('visitHistory'),
+          // Objective
+          vitals_bp: readField('vitalsBp'),
+          vitals_pulse: readField('vitalsPulse'),
+          vitals_temp: readField('vitalsTemp'),
+          vitals_weight: readField('vitalsWeight'),
+          examination: readField('visitExamination'),
+          // Assessment
+          diagnosis_category: readField('visitDiagnosisCategory'),
+          diagnosis: readField('visitDiagnosis'),
+          clinical_notes: readField('visitClinicalNotes'),
+          // Plan
+          treatment_plan: readField('visitTreatmentPlan'),
+          prescription: readField('visitPrescription'),
           follow_up_date: document.getElementById('visitFollowUp').value || null,
           fee_amount: feeValue
         });
@@ -2221,7 +2335,12 @@
           return;
         }
 
-        ['visitDiagnosisCategory','visitDiagnosis','visitPrescription','visitFollowUp','visitFee'].forEach(id => document.getElementById(id).value = '');
+        [
+          'chiefComplaint', 'visitSymptoms', 'visitHistory',
+          'vitalsBp', 'vitalsPulse', 'vitalsTemp', 'vitalsWeight', 'visitExamination',
+          'visitDiagnosisCategory', 'visitDiagnosis', 'visitClinicalNotes',
+          'visitTreatmentPlan', 'visitPrescription', 'visitFollowUp', 'visitFee'
+        ].forEach(id => document.getElementById(id).value = '');
         await loadVisitHistory(currentDetailPatientId);
       }
 
@@ -3002,6 +3121,11 @@
           const printBtn = event.target.closest('.print-visit-btn');
           if (printBtn) {
             printPrescription(parseInt(printBtn.getAttribute('data-visit-index')));
+            return;
+          }
+          const toggleDetailBtn = event.target.closest('.toggle-visit-detail-btn');
+          if (toggleDetailBtn) {
+            toggleVisitDetail(parseInt(toggleDetailBtn.getAttribute('data-visit-index')));
             return;
           }
           // Conditions page: clicking a ranked condition row or its
