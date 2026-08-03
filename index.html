@@ -584,61 +584,58 @@
                 Welcome
               </p>
             </div>
-            <div
-              style="
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 20px;
-                margin-bottom: 20px;
-              "
-            >
+
+            <!-- Row 1: today-focused stats -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:20px;">
               <div class="card">
-                <h4
-                  style="
-                    font-size: 12px;
-                    color: var(--text-light);
-                    text-transform: uppercase;
-                    margin-bottom: 8px;
-                  "
-                >
-                  Total Patients
-                </h4>
-                <p
-                  style="
-                    font-size: 30px;
-                    font-weight: 700;
-                    color: var(--primary);
-                  "
-                  id="totalPatients"
-                >
-                  0
-                </p>
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Today's Patients</h4>
+                <p style="font-size:28px; font-weight:700; color:var(--primary);" id="dashTodayPatients">0</p>
+              </div>
+              <!-- Hidden by default, shown only for Doctor/Manager via
+                   applyRoleVisibility() - same rule as revenueCard below. -->
+              <div class="card" id="dashRevenueTodayCard" style="display:none;">
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Revenue Today</h4>
+                <p style="font-size:28px; font-weight:700; color:var(--success);" id="dashRevenueToday">Rs. 0</p>
+              </div>
+              <div class="card">
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Pending Follow-ups</h4>
+                <p style="font-size:28px; font-weight:700; color:var(--accent);" id="dashPendingFollowUps">0</p>
+              </div>
+              <div class="card">
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Total Patients</h4>
+                <p style="font-size:28px; font-weight:700; color:var(--primary);" id="totalPatients">0</p>
               </div>
               <!-- Hidden by default, shown only for Doctor role via
                applyRoleVisibility(). Data itself is also protected at the
                database level by RLS on visits.fee_amount, so this card
                being hidden is a UI convenience, not the actual security. -->
               <div class="card" id="revenueCard" style="display: none">
-                <h4
-                  style="
-                    font-size: 12px;
-                    color: var(--text-light);
-                    text-transform: uppercase;
-                    margin-bottom: 8px;
-                  "
-                >
-                  Revenue This Month
-                </h4>
-                <p
-                  style="
-                    font-size: 30px;
-                    font-weight: 700;
-                    color: var(--success);
-                  "
-                  id="revenueThisMonth"
-                >
-                  Rs. 0
-                </p>
+                <h4 style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">Revenue This Month</h4>
+                <p style="font-size:28px; font-weight:700; color:var(--success);" id="revenueThisMonth">Rs. 0</p>
+              </div>
+            </div>
+
+            <!-- Row 2: Queue Status + Appointment Statistics side by side -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+              <div class="card">
+                <h4 style="margin-bottom:14px;">Today's Queue Status</h4>
+                <div id="dashQueueStatus" style="display:flex; flex-wrap:wrap; gap:12px;">
+                  <span style="color:var(--text-light); font-size:13px;">Loading...</span>
+                </div>
+              </div>
+              <div class="card">
+                <h4 style="margin-bottom:14px;">Appointment Statistics (This Month)</h4>
+                <div id="dashApptStats" style="display:flex; flex-wrap:wrap; gap:12px;">
+                  <span style="color:var(--text-light); font-size:13px;">Loading...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Monthly Trends - patients per day, last 30 days, simple bar chart in pure CSS -->
+            <div class="card" style="margin-bottom:20px;">
+              <h4 style="margin-bottom:14px;">Monthly Trend - Patients Per Day (Last 30 Days)</h4>
+              <div id="dashMonthlyTrend" style="display:flex; align-items:flex-end; gap:3px; height:100px; overflow-x:auto;">
+                <span style="color:var(--text-light); font-size:13px;">Loading...</span>
               </div>
             </div>
 
@@ -1643,6 +1640,9 @@
         const titles = { dashboard: 'Dashboard', patients: 'Patient Registry', appointments: "Today's Queue", revenue: 'Revenue', conditions: 'Conditions', staffmgmt: 'Staff Management', services: 'Service Management' };
         document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
 
+        if (pageId === 'dashboard') {
+          loadDashboardWidgets();
+        }
         if (pageId === 'revenue') {
           loadRevenuePage();
         }
@@ -1670,6 +1670,7 @@
         await loadCommonConditions();
         await loadServices();
         applyRoleVisibility();
+        await loadDashboardWidgets();
         if (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager') {
           await loadRevenue();
         }
@@ -1686,6 +1687,7 @@
         const isManager = CURRENT_STAFF_ROLE === 'Manager';
         document.getElementById('visitFeeWrapper').style.display = isDoctor  ? 'block' : 'none';
         document.getElementById('revenueCard').style.display     = canSeeRev ? 'block' : 'none';
+        document.getElementById('dashRevenueTodayCard').style.display = canSeeRev ? 'block' : 'none';
         document.getElementById('revenueNavItem').style.display  = canSeeRev ? 'block' : 'none';
         document.getElementById('staffMgmtNavItem').style.display = canSeeRev ? 'block' : 'none';
         document.getElementById('defaultFeeCard').style.display  = isManager ? 'block' : 'none';
@@ -1731,6 +1733,112 @@
           if (row.consultation_fee  != null) total += Number(row.consultation_fee);
         }
         document.getElementById('revenueThisMonth').textContent = 'Rs. ' + total.toLocaleString();
+      }
+
+      // ---------------------------------------------------------------
+      // DASHBOARD WIDGETS (today's stats, follow-ups, queue, stats, trend)
+      // Grouped into one function so loadAllData() only has to call one
+      // thing - each piece below still queries independently since they
+      // pull from different tables/date ranges.
+      // ---------------------------------------------------------------
+      async function loadDashboardWidgets() {
+        const today = todayStr();
+
+        // Today's Patients - distinct patients with an appointment today
+        const { data: todayAppts } = await supabaseClient
+          .from('appointments')
+          .select('patient_id')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .eq('appointment_date', today);
+        const distinctTodayPatients = new Set((todayAppts || []).map(a => a.patient_id));
+        document.getElementById('dashTodayPatients').textContent = distinctTodayPatients.size;
+
+        // Revenue Today - same two sources as monthly revenue, filtered to today
+        if (CURRENT_STAFF_ROLE === 'Doctor' || CURRENT_STAFF_ROLE === 'Manager') {
+          const [visitToday, apptToday] = await Promise.all([
+            supabaseClient.from('visits').select('fee_amount').eq('clinic_id', CURRENT_CLINIC_ID).eq('visit_date', today),
+            supabaseClient.from('appointments').select('consultation_fee').eq('clinic_id', CURRENT_CLINIC_ID).eq('appointment_date', today)
+          ]);
+          let todayTotal = 0;
+          for (const row of (visitToday.data || [])) { if (row.fee_amount != null) todayTotal += Number(row.fee_amount); }
+          for (const row of (apptToday.data || [])) { if (row.consultation_fee != null) todayTotal += Number(row.consultation_fee); }
+          document.getElementById('dashRevenueToday').textContent = 'Rs. ' + todayTotal.toLocaleString();
+        }
+
+        // Pending Follow-ups - visits with a follow_up_date today or in the future
+        const { data: followUps } = await supabaseClient
+          .from('visits')
+          .select('id')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .gte('follow_up_date', today);
+        document.getElementById('dashPendingFollowUps').textContent = (followUps || []).length;
+
+        // Queue Status - count of today's appointments by status
+        const { data: queueRows } = await supabaseClient
+          .from('appointments')
+          .select('status')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .eq('appointment_date', today);
+        const statusCounts = {};
+        for (const row of (queueRows || [])) {
+          statusCounts[row.status] = (statusCounts[row.status] || 0) + 1;
+        }
+        const statusColors = { scheduled:'#e0f2fe', waiting:'#fef3c7', in_progress:'#dbeafe', completed:'#dcfce7', cancelled:'#fee2e2', no_show:'#fee2e2' };
+        const statusText = { scheduled:'#0369a1', waiting:'#92400e', in_progress:'#1e40af', completed:'#166534', cancelled:'#991b1b', no_show:'#991b1b' };
+        let queueHtml = '';
+        for (const status in statusCounts) {
+          queueHtml += '<span style="background:' + statusColors[status] + '; color:' + statusText[status] + '; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; text-transform:capitalize;">'
+            + status.replace('_',' ') + ': ' + statusCounts[status] + '</span>';
+        }
+        document.getElementById('dashQueueStatus').innerHTML = queueHtml || '<span style="color:var(--text-light); font-size:13px;">No appointments today</span>';
+
+        // Appointment Statistics - this month, broken down by status
+        const now = new Date();
+        const monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+        const { data: monthAppts } = await supabaseClient
+          .from('appointments')
+          .select('status')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .gte('appointment_date', monthStart);
+        const monthCounts = {};
+        for (const row of (monthAppts || [])) {
+          monthCounts[row.status] = (monthCounts[row.status] || 0) + 1;
+        }
+        let statsHtml = '<span style="background:var(--bg-light); padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600;">Total: ' + (monthAppts || []).length + '</span>';
+        for (const status in monthCounts) {
+          statsHtml += '<span style="background:' + statusColors[status] + '; color:' + statusText[status] + '; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; text-transform:capitalize;">'
+            + status.replace('_',' ') + ': ' + monthCounts[status] + '</span>';
+        }
+        document.getElementById('dashApptStats').innerHTML = statsHtml;
+
+        // Monthly Trend - patients (appointments) per day, last 30 days,
+        // rendered as a simple CSS bar chart (no charting library needed).
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+        const trendStart = thirtyDaysAgo.toISOString().split('T')[0];
+        const { data: trendAppts } = await supabaseClient
+          .from('appointments')
+          .select('appointment_date')
+          .eq('clinic_id', CURRENT_CLINIC_ID)
+          .gte('appointment_date', trendStart);
+
+        const dayCounts = {};
+        for (const row of (trendAppts || [])) {
+          dayCounts[row.appointment_date] = (dayCounts[row.appointment_date] || 0) + 1;
+        }
+        let maxCount = 1;
+        for (const d in dayCounts) { if (dayCounts[d] > maxCount) maxCount = dayCounts[d]; }
+
+        let trendHtml = '';
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(thirtyDaysAgo);
+          d.setDate(d.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          const count = dayCounts[dateStr] || 0;
+          const heightPct = Math.max(4, Math.round((count / maxCount) * 100));
+          trendHtml += '<div title="' + dateStr + ': ' + count + ' patient(s)" style="width:8px; height:' + heightPct + '%; background:' + (count > 0 ? 'var(--primary)' : 'var(--border-color)') + '; border-radius:2px 2px 0 0;"></div>';
+        }
+        document.getElementById('dashMonthlyTrend').innerHTML = trendHtml;
       }
 
       // ---------------------------------------------------------------
