@@ -898,27 +898,57 @@
                     <div id="visitServicesChecklist" style="display:flex; flex-wrap:wrap; gap:10px 18px; padding:10px 0;"></div>
                   </div>
 
-                  <div class="form-row">
+                  <div class="form-row" style="grid-template-columns:1fr 1fr;">
                     <div>
                       <label class="field-label" for="visitTreatmentPlan">Treatment Plan</label>
                       <input id="visitTreatmentPlan" placeholder="Overall treatment approach" />
-                    </div>
-                    <div>
-                      <label class="field-label" for="visitPrescription">Prescription</label>
-                      <input id="visitPrescription" placeholder="Medicines / instructions" />
                     </div>
                     <div>
                       <label class="field-label" for="visitFollowUp">Follow-up Date</label>
                       <input id="visitFollowUp" type="date" />
                     </div>
                   </div>
+
+                  <!-- ===== PRESCRIPTION BUILDER =====
+                       Structured medicine list, not free text. rxItemsContainer
+                       holds one .rx-item-row per medicine, built by
+                       addPrescriptionItemRow(). Favorites and Templates both
+                       just call addPrescriptionItemRow() with pre-filled values -
+                       same underlying row, different starting point. -->
+                  <div style="margin-top:16px; background:var(--bg-light); border-radius:10px; padding:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                      <label class="field-label" style="margin:0;">Prescription</label>
+                      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <select id="templatePickerSelect" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:12.5px;">
+                          <option value="">Apply Template...</option>
+                        </select>
+                        <select id="favoritePickerSelect" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:12.5px;">
+                          <option value="">Add Favorite Medicine...</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" id="addRxItemBtn" style="padding:6px 12px; font-size:12.5px;"><i class="fas fa-plus"></i> Add Medicine</button>
+                        <button type="button" class="btn btn-secondary" id="saveAsTemplateBtn" style="padding:6px 12px; font-size:12.5px;"><i class="fas fa-save"></i> Save as Template</button>
+                      </div>
+                    </div>
+
+                    <div id="rxItemsContainer"></div>
+
+                    <p style="color:var(--text-light); font-size:11.5px; margin-top:8px;">
+                      Each medicine has its own dosage, frequency, and duration. Use the star icon on a row to save it as a favorite for next time.
+                    </p>
+
+                    <div style="margin-top:12px;">
+                      <label class="field-label" for="visitAdvice">Advice</label>
+                      <input id="visitAdvice" placeholder="General advice (e.g. rest, hydration, avoid spicy food)" />
+                    </div>
+                  </div>
+
                   <!-- Hidden by default. Only unhidden by JS (applyRoleVisibility)
                    if the logged-in user's role is Doctor. Even if someone
                    forces this visible via DevTools, the actual fee_amount
                    data still won't come back from Supabase for a non-doctor -
                    the RLS policy on visits enforces that at the database
                    level, not this element's visibility. -->
-                  <div id="visitFeeWrapper" style="display: none; margin-top:12px;">
+                  <div id="visitFeeWrapper" style="display: none; margin-top:16px;">
                     <label class="field-label" for="visitFee">Fee (Rs.) - Doctor only</label>
                     <input
                       id="visitFee"
@@ -1512,6 +1542,7 @@
       let staffCache = [];            // full staff list cache, for dropdowns
       let currentDetailPatientId = null; // which patient's detail view is open
       let currentVisitsCache = [];    // the visit list currently shown, for the Print button
+      let currentPrescriptionsByVisit = {}; // visit.id -> prescription (with items), from loadVisitHistory
       let quickSelectedPatientId = null; // set when user picks an existing patient in the walk-in autocomplete
       let lastWalkIn = null; // { patientId, apptId, isNew } — used by Undo Last Walk-in
 
@@ -2472,6 +2503,7 @@
           doctorList.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
         document.getElementById('visitDate').value = todayStr();
         await populateVisitServiceCheckboxes();
+        await initPrescriptionBuilder();
 
         await loadVisitHistory(patientId);
       }
@@ -2486,7 +2518,7 @@
       async function loadVisitHistory(patientId) {
         const { data, error } = await supabaseClient
           .from('visits')
-          .select('visit_date, chief_complaint, symptoms, history, vitals_bp, vitals_pulse, vitals_temp, vitals_weight, examination, diagnosis_category, diagnosis, clinical_notes, treatment_plan, prescription, follow_up_date, staff(full_name)')
+          .select('id, visit_date, chief_complaint, symptoms, history, vitals_bp, vitals_pulse, vitals_temp, vitals_weight, examination, diagnosis_category, diagnosis, clinical_notes, treatment_plan, follow_up_date, staff(full_name)')
           .eq('clinic_id', CURRENT_CLINIC_ID)
           .eq('patient_id', patientId)
           .order('visit_date', { ascending: false });
@@ -2503,26 +2535,46 @@
           return;
         }
 
+        // Fetch every prescription (with its medicine items) for all of
+        // this patient's visits in TWO queries total, not one query per
+        // visit - keyed by visit_id in JS afterward for fast lookup.
+        const visitIds = currentVisitsCache.map(v => v.id);
+        const { data: rxData } = await supabaseClient
+          .from('prescriptions')
+          .select('id, visit_id, advice, prescription_items(medicine_name, dosage, frequency, duration, item_order)')
+          .in('visit_id', visitIds);
+
+        const prescriptionByVisitId = {};
+        for (const rx of (rxData || [])) {
+          prescriptionByVisitId[rx.visit_id] = rx;
+        }
+        currentPrescriptionsByVisit = prescriptionByVisitId;
+
         // Visit Timeline: each visit is a summary row plus a hidden detail
         // row underneath it, toggled open/closed by clicking "View Details".
-        // The detail row shows the full SOAP breakdown for that visit -
-        // this is what makes it a real timeline, not just a flat list.
+        // The detail row shows the full SOAP breakdown plus the structured
+        // prescription for that visit - this is what makes it a real
+        // timeline with genuine clinical history, not just a flat list.
         let html = '';
         for (let i = 0; i < currentVisitsCache.length; i++) {
           const v = currentVisitsCache[i];
           const conditionLabel = v.diagnosis_category || v.diagnosis || '-';
+          const rx = prescriptionByVisitId[v.id];
+          const rxSummary = rx && rx.prescription_items && rx.prescription_items.length > 0
+            ? rx.prescription_items.map(it => it.medicine_name).join(', ')
+            : '-';
 
           html += '<tr>';
           html += '<td style="font-family:monospace;">' + v.visit_date + '</td>';
           html += '<td>' + (v.staff ? v.staff.full_name : 'N/A') + '</td>';
           html += '<td>' + conditionLabel + '</td>';
-          html += '<td>' + (v.prescription || '-') + '</td>';
+          html += '<td>' + rxSummary + '</td>';
           html += '<td>' + (v.follow_up_date || '-') + '</td>';
           html += '<td style="white-space:nowrap;">';
           html += '<button class="btn btn-secondary toggle-visit-detail-btn" data-visit-index="' + i + '" style="padding:6px 10px; font-size:12px;"><i class="fas fa-chevron-down"></i> Details</button> ';
           // data-visit-index instead of passing the object inline - this is
           // exactly the pattern that avoided the earlier syntax-error bug.
-          html += '<button class="btn btn-secondary print-visit-btn" data-visit-index="' + i + '" style="padding:6px 10px; font-size:12px;"><i class="fas fa-print"></i> Print</button>';
+          html += '<button class="btn btn-secondary print-visit-btn" data-visit-index="' + i + '" style="padding:6px 10px; font-size:12px;"><i class="fas fa-print"></i> Reprint</button>';
           html += '</td>';
           html += '</tr>';
 
@@ -2545,7 +2597,22 @@
 
           html += '<div><strong style="color:var(--success); font-size:11px; text-transform:uppercase;">Plan</strong>';
           html += '<p style="margin-top:4px;">Treatment: ' + (v.treatment_plan || '-') + '</p>';
-          html += '<p>Prescription: ' + (v.prescription || '-') + '</p>';
+          if (rx && rx.prescription_items && rx.prescription_items.length > 0) {
+            const sortedItems = rx.prescription_items.slice().sort(function (a, b) { return (a.item_order || 0) - (b.item_order || 0); });
+            html += '<p style="margin-bottom:2px;">Medicines:</p>';
+            html += '<ul style="margin:0 0 6px 16px; padding:0;">';
+            for (const it of sortedItems) {
+              html += '<li>' + it.medicine_name
+                + (it.dosage ? ' - ' + it.dosage : '')
+                + (it.frequency ? ', ' + it.frequency : '')
+                + (it.duration ? ', ' + it.duration : '')
+                + '</li>';
+            }
+            html += '</ul>';
+            if (rx.advice) { html += '<p>Advice: ' + rx.advice + '</p>'; }
+          } else {
+            html += '<p>Prescription: -</p>';
+          }
           html += '<p>Follow-up: ' + (v.follow_up_date || '-') + '</p></div>';
 
           html += '</div></td></tr>';
@@ -2559,6 +2626,174 @@
         if (row) {
           row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
         }
+      }
+
+      // ---------------------------------------------------------------
+      // PRESCRIPTION BUILDER
+      // rxItemsContainer holds one .rx-item-row div per medicine. Each
+      // row has its own medicine name / dosage / frequency / duration
+      // inputs plus a remove (x) and favorite (star) button. Favorites
+      // and Templates both call addPrescriptionItemRow() to insert a
+      // pre-filled row - same underlying building block either way.
+      // ---------------------------------------------------------------
+
+      let favoriteMedicinesCache = [];
+      let prescriptionTemplatesCache = [];
+
+      // Called every time the patient detail view opens - loads this
+      // doctor's favorites and templates, resets the medicine list to empty.
+      async function initPrescriptionBuilder() {
+        document.getElementById('rxItemsContainer').innerHTML = '';
+        document.getElementById('visitAdvice').value = '';
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const staffId = user ? user.id : null;
+
+        const [favResult, tmplResult] = await Promise.all([
+          supabaseClient.from('favorite_medicines').select('*').eq('clinic_id', CURRENT_CLINIC_ID).eq('staff_id', staffId).order('medicine_name'),
+          supabaseClient.from('prescription_templates').select('id, template_name, prescription_template_items(medicine_name, dosage, frequency, duration, item_order)').eq('clinic_id', CURRENT_CLINIC_ID).eq('staff_id', staffId).order('template_name')
+        ]);
+
+        favoriteMedicinesCache = favResult.data || [];
+        prescriptionTemplatesCache = tmplResult.data || [];
+
+        document.getElementById('favoritePickerSelect').innerHTML =
+          '<option value="">Add Favorite Medicine...</option>' +
+          favoriteMedicinesCache.map(function (f, i) { return '<option value="' + i + '">' + f.medicine_name + '</option>'; }).join('');
+
+        document.getElementById('templatePickerSelect').innerHTML =
+          '<option value="">Apply Template...</option>' +
+          prescriptionTemplatesCache.map(function (t, i) { return '<option value="' + i + '">' + t.template_name + '</option>'; }).join('');
+      }
+
+      // Adds one medicine row to the builder. Values are optional - an
+      // empty call (from the "Add Medicine" button) creates a blank row
+      // the doctor fills in by hand; favorites/templates pass real values.
+      let rxRowCounter = 0;
+      function addPrescriptionItemRow(name, dosage, frequency, duration) {
+        rxRowCounter++;
+        const rowId = 'rxRow' + rxRowCounter;
+        const container = document.getElementById('rxItemsContainer');
+        const row = document.createElement('div');
+        row.className = 'rx-item-row';
+        row.id = rowId;
+        row.style.cssText = 'display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto auto; gap:8px; margin-bottom:8px; align-items:center;';
+        row.innerHTML =
+          '<input class="rx-medicine-name" placeholder="Medicine name" value="' + (name || '') + '" style="padding:8px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">' +
+          '<input class="rx-dosage" placeholder="Dosage" value="' + (dosage || '') + '" style="padding:8px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">' +
+          '<input class="rx-frequency" placeholder="Frequency" value="' + (frequency || '') + '" style="padding:8px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">' +
+          '<input class="rx-duration" placeholder="Duration" value="' + (duration || '') + '" style="padding:8px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">' +
+          '<button type="button" class="rx-save-favorite-btn btn btn-secondary" title="Save as favorite" style="padding:7px 10px;"><i class="fas fa-star"></i></button>' +
+          '<button type="button" class="rx-remove-row-btn btn btn-secondary" title="Remove" style="padding:7px 10px; color:#dc2626;"><i class="fas fa-times"></i></button>';
+        container.appendChild(row);
+      }
+
+      function removePrescriptionItemRow(rowEl) {
+        rowEl.remove();
+      }
+
+      // Reads a rx-item-row's current input values and saves it to
+      // favorite_medicines for the logged-in doctor.
+      async function saveRowAsFavorite(rowEl) {
+        const name = rowEl.querySelector('.rx-medicine-name').value.trim();
+        if (!name) {
+          alert('Enter a medicine name before saving as favorite.');
+          return;
+        }
+        const dosage = rowEl.querySelector('.rx-dosage').value.trim();
+        const frequency = rowEl.querySelector('.rx-frequency').value.trim();
+        const duration = rowEl.querySelector('.rx-duration').value.trim();
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const { error } = await supabaseClient.from('favorite_medicines').insert({
+          clinic_id: CURRENT_CLINIC_ID,
+          staff_id: user.id,
+          medicine_name: name,
+          default_dosage: dosage || null,
+          default_frequency: frequency || null,
+          default_duration: duration || null
+        });
+
+        if (error) {
+          alert('Error saving favorite: ' + error.message);
+          return;
+        }
+        alert(name + ' saved to your favorites.');
+        await initPrescriptionBuilder();
+      }
+
+      // Adds a row pre-filled from the selected favorite. Resets the
+      // dropdown back to its placeholder after use so it can be used again.
+      function handleFavoritePicker() {
+        const select = document.getElementById('favoritePickerSelect');
+        const index = select.value;
+        if (index === '') return;
+        const fav = favoriteMedicinesCache[parseInt(index)];
+        if (fav) {
+          addPrescriptionItemRow(fav.medicine_name, fav.default_dosage, fav.default_frequency, fav.default_duration);
+        }
+        select.value = '';
+      }
+
+      // Applies a full template - adds one row per medicine in the template,
+      // all at once. Existing rows are kept, not cleared, so a doctor can
+      // combine a template with manually-added medicines.
+      function handleTemplatePicker() {
+        const select = document.getElementById('templatePickerSelect');
+        const index = select.value;
+        if (index === '') return;
+        const tmpl = prescriptionTemplatesCache[parseInt(index)];
+        if (tmpl && tmpl.prescription_template_items) {
+          const sorted = tmpl.prescription_template_items.slice().sort(function (a, b) { return (a.item_order || 0) - (b.item_order || 0); });
+          for (const item of sorted) {
+            addPrescriptionItemRow(item.medicine_name, item.dosage, item.frequency, item.duration);
+          }
+        }
+        select.value = '';
+      }
+
+      // Saves the current set of medicine rows as a new reusable template.
+      // Prompts for a name since there's no dedicated form for this -
+      // keeps the feature lightweight rather than adding another modal.
+      async function saveCurrentAsTemplate() {
+        const rows = document.querySelectorAll('.rx-item-row');
+        if (rows.length === 0) {
+          alert('Add at least one medicine before saving as a template.');
+          return;
+        }
+        const templateName = prompt('Name this template (e.g. "Standard Flu Protocol"):');
+        if (!templateName || !templateName.trim()) return;
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const { data: newTemplate, error } = await supabaseClient.from('prescription_templates').insert({
+          clinic_id: CURRENT_CLINIC_ID,
+          staff_id: user.id,
+          template_name: templateName.trim()
+        }).select().single();
+
+        if (error) {
+          alert('Error creating template: ' + error.message);
+          return;
+        }
+
+        const itemRows = Array.from(rows).map(function (rowEl, i) {
+          return {
+            clinic_id: CURRENT_CLINIC_ID,
+            template_id: newTemplate.id,
+            medicine_name: rowEl.querySelector('.rx-medicine-name').value.trim(),
+            dosage: rowEl.querySelector('.rx-dosage').value.trim() || null,
+            frequency: rowEl.querySelector('.rx-frequency').value.trim() || null,
+            duration: rowEl.querySelector('.rx-duration').value.trim() || null,
+            item_order: i
+          };
+        }).filter(function (r) { return r.medicine_name; });
+
+        if (itemRows.length > 0) {
+          await supabaseClient.from('prescription_template_items').insert(itemRows);
+        }
+
+        alert('Template "' + templateName.trim() + '" saved.');
+        await initPrescriptionBuilder();
       }
 
       async function handleAddVisit() {
@@ -2601,7 +2836,6 @@
           clinical_notes: readField('visitClinicalNotes'),
           // Plan
           treatment_plan: readField('visitTreatmentPlan'),
-          prescription: readField('visitPrescription'),
           follow_up_date: document.getElementById('visitFollowUp').value || null,
           fee_amount: feeValue
         }).select().single();
@@ -2631,13 +2865,52 @@
           }
         }
 
+        // Save the prescription: one row in prescriptions (the header,
+        // holding general advice), then one row per medicine in
+        // prescription_items. Only created if at least one medicine row
+        // has a name filled in - an empty builder means no prescription
+        // was written for this visit, which is valid (e.g. a checkup).
+        const rxRows = document.querySelectorAll('.rx-item-row');
+        const rxItemsToSave = Array.from(rxRows).map(function (rowEl, i) {
+          return {
+            medicine_name: rowEl.querySelector('.rx-medicine-name').value.trim(),
+            dosage: rowEl.querySelector('.rx-dosage').value.trim() || null,
+            frequency: rowEl.querySelector('.rx-frequency').value.trim() || null,
+            duration: rowEl.querySelector('.rx-duration').value.trim() || null,
+            item_order: i
+          };
+        }).filter(function (item) { return item.medicine_name; });
+
+        if (rxItemsToSave.length > 0) {
+          const { data: newRx, error: rxError } = await supabaseClient.from('prescriptions').insert({
+            clinic_id: CURRENT_CLINIC_ID,
+            visit_id: newVisit.id,
+            patient_id: currentDetailPatientId,
+            doctor_id: doctorId,
+            advice: readField('visitAdvice')
+          }).select().single();
+
+          if (rxError) {
+            alert('Visit saved, but prescription could not be recorded: ' + rxError.message);
+          } else {
+            const itemRows = rxItemsToSave.map(function (item) {
+              return Object.assign({ clinic_id: CURRENT_CLINIC_ID, prescription_id: newRx.id }, item);
+            });
+            const { error: itemsError } = await supabaseClient.from('prescription_items').insert(itemRows);
+            if (itemsError) {
+              alert('Prescription created, but medicines could not be saved: ' + itemsError.message);
+            }
+          }
+        }
+
         [
           'chiefComplaint', 'visitSymptoms', 'visitHistory',
           'vitalsBp', 'vitalsPulse', 'vitalsTemp', 'vitalsWeight', 'visitExamination',
           'visitDiagnosisCategory', 'visitDiagnosis', 'visitClinicalNotes',
-          'visitTreatmentPlan', 'visitPrescription', 'visitFollowUp', 'visitFee'
+          'visitTreatmentPlan', 'visitAdvice', 'visitFollowUp', 'visitFee'
         ].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('.visit-service-checkbox:checked').forEach(function (box) { box.checked = false; });
+        document.getElementById('rxItemsContainer').innerHTML = '';
         await loadVisitHistory(currentDetailPatientId);
       }
 
@@ -2744,6 +3017,7 @@
         const patientAge    = (patient && patient.age)    ? patient.age           : 'N/A';
         const patientGender = (patient && patient.gender) ? patient.gender        : 'N/A';
         const doctorName    = visit.staff                 ? visit.staff.full_name : 'N/A';
+        const rx            = currentPrescriptionsByVisit[visit.id];
 
         // Closing tags are written as concatenated halves so the literal pattern
         // does not appear anywhere inside this script block - see comment above.
@@ -2752,6 +3026,23 @@
         const OPEN_BODY   = '<' + 'body>';
         const CLOSE_BODY  = '</' + 'body>';
         const CLOSE_HTML  = '</' + 'html>';
+        const CLOSE_TABLE = '</' + 'table>';
+
+        // Builds the medicine table rows from the real structured
+        // prescription_items list - dosage, frequency, and duration each
+        // in their own column, sorted by item_order.
+        let medicineRows = '<tr><td colspan="4" style="color:#5f8a86;">No medicines recorded</td></tr>';
+        if (rx && rx.prescription_items && rx.prescription_items.length > 0) {
+          const sorted = rx.prescription_items.slice().sort(function (a, b) { return (a.item_order || 0) - (b.item_order || 0); });
+          medicineRows = sorted.map(function (it) {
+            return '<tr>'
+              + '<td>' + it.medicine_name + '</td>'
+              + '<td>' + (it.dosage || '-') + '</td>'
+              + '<td>' + (it.frequency || '-') + '</td>'
+              + '<td>' + (it.duration || '-') + '</td>'
+              + '</tr>';
+          }).join('');
+        }
 
         const lines = [
           '<!DOCTYPE html>',
@@ -2768,6 +3059,9 @@
           '.sec{margin-bottom:20px;}',
           '.sec h3{font-size:12px;text-transform:uppercase;color:#5f8a86;margin-bottom:6px;}',
           '.sec p{font-size:16px;white-space:pre-wrap;margin:0;}',
+          'table{width:100%;border-collapse:collapse;margin-top:8px;}',
+          'th{background:#f0fdfa;padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#134e4a;border-bottom:2px solid #d1fae5;}',
+          'td{padding:8px 10px;border-bottom:1px solid #d1fae5;font-size:14px;}',
           '#rxPrintBtn{display:block;margin:36px auto 0;padding:10px 28px;',
           '  background:#0d9488;color:#fff;border:none;border-radius:8px;',
           '  font-size:15px;font-weight:600;cursor:pointer;}',
@@ -2784,8 +3078,14 @@
           '  <span><strong>Age / Gender:</strong> ' + patientAge + ' / ' + patientGender + '</span>',
           '  <span><strong>Doctor:</strong> ' + doctorName + '</span>',
           '</div>',
-          '<div class="sec"><h3>Diagnosis</h3><p>' + (visit.diagnosis || 'Not recorded') + '</p></div>',
-          '<div class="sec"><h3>Prescription (Rx)</h3><p>' + (visit.prescription || 'Not recorded') + '</p></div>',
+          '<div class="sec"><h3>Diagnosis</h3><p>' + (visit.diagnosis || visit.diagnosis_category || 'Not recorded') + '</p></div>',
+          '<div class="sec"><h3>Prescription (Rx)</h3>',
+          '<table>',
+          '<thead><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>',
+          '<tbody>' + medicineRows + '</tbody>',
+          CLOSE_TABLE,
+          '</div>',
+          (rx && rx.advice) ? '<div class="sec"><h3>Advice</h3><p>' + rx.advice + '</p></div>' : '',
           visit.follow_up_date
             ? '<div class="sec"><h3>Follow-up Date</h3><p>' + visit.follow_up_date + '</p></div>'
             : '',
@@ -3404,6 +3704,27 @@
         document.getElementById('backToPatientListBtn').addEventListener('click', closePatientDetail);
         document.getElementById('printProfileBtn').addEventListener('click', printPatientProfile);
         document.getElementById('saveVisitBtn').addEventListener('click', handleAddVisit);
+        document.getElementById('addRxItemBtn').addEventListener('click', function () {
+          addPrescriptionItemRow('', '', '', '');
+        });
+        document.getElementById('saveAsTemplateBtn').addEventListener('click', saveCurrentAsTemplate);
+        document.getElementById('favoritePickerSelect').addEventListener('change', handleFavoritePicker);
+        document.getElementById('templatePickerSelect').addEventListener('change', handleTemplatePicker);
+        // Medicine rows are created dynamically, so their remove/favorite
+        // buttons are handled via delegation on the container, same
+        // pattern used for the queue status dropdowns and staff roles.
+        document.getElementById('rxItemsContainer').addEventListener('click', function (event) {
+          const removeBtn = event.target.closest('.rx-remove-row-btn');
+          if (removeBtn) {
+            removePrescriptionItemRow(removeBtn.closest('.rx-item-row'));
+            return;
+          }
+          const favBtn = event.target.closest('.rx-save-favorite-btn');
+          if (favBtn) {
+            saveRowAsFavorite(favBtn.closest('.rx-item-row'));
+            return;
+          }
+        });
 
         // Clicking a patient row opens their detail view. Clicking a Print
         // button inside the visit history table prints that visit. Both are
