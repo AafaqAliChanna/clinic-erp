@@ -253,6 +253,7 @@
         margin-left: var(--sidebar-width);
         flex: 1;
         overflow-y: auto;
+        min-width: 0; /* prevents flex children from overflowing on narrow screens */
       }
       .header {
         background: var(--card-bg);
@@ -261,10 +262,33 @@
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid var(--border-color);
+        gap: 12px;
       }
       .header h2 {
         font-size: 22px;
         font-weight: 700;
+      }
+      /* Hamburger menu button - hidden on desktop, shown only under the
+         mobile breakpoint below. Toggles the .sidebar-open class on body,
+         which slides the sidebar into view as an overlay. */
+      .mobile-menu-btn {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 22px;
+        color: var(--text-dark);
+        cursor: pointer;
+        padding: 4px 8px;
+      }
+      /* Semi-transparent backdrop shown behind the sidebar when it's open
+         on mobile - tapping it closes the sidebar, same as tapping outside
+         any drawer/modal. */
+      .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 999;
       }
       .user-badge {
         display: flex;
@@ -442,6 +466,111 @@
         font-size: 12px;
         color: var(--text-light);
       }
+
+      /* ============================================================
+         RESPONSIVE LAYER
+         Two breakpoints: tablet (≤1024px) tightens spacing and shrinks
+         the sidebar; mobile (≤768px) converts the sidebar into a
+         slide-in drawer behind a hamburger button, and stacks every
+         multi-column layout in the app down to one column.
+         ============================================================ */
+
+      /* ---------- TABLET (≤1024px) ---------- */
+      @media (max-width: 1024px) {
+        :root { --sidebar-width: 230px; }
+        .content { padding: 20px; }
+        .header { padding: 14px 20px; }
+      }
+
+      /* ---------- MOBILE (≤768px) ---------- */
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+          transition: transform 0.25s ease;
+          z-index: 1000;
+          width: 260px;
+        }
+        body.sidebar-open .sidebar {
+          transform: translateX(0);
+        }
+        body.sidebar-open .sidebar-backdrop {
+          display: block;
+        }
+        .main-content {
+          margin-left: 0;
+        }
+        .mobile-menu-btn {
+          display: block;
+        }
+        .header {
+          padding: 12px 16px;
+        }
+        .header h2 {
+          font-size: 18px;
+        }
+        .user-badge strong {
+          display: none !important; /* keep just the avatar circle to save space */
+        }
+        .user-badge small {
+          display: none;
+        }
+        .content {
+          padding: 14px;
+        }
+
+        /* Every stat-card grid and multi-column form-row collapses to a
+           single column - this is what stops fields/cards from getting
+           squished unreadably narrow on a phone screen. */
+        .form-row {
+          grid-template-columns: 1fr !important;
+        }
+        div[style*="grid-template-columns"] {
+          grid-template-columns: 1fr !important;
+        }
+
+        /* Tables don't try to shrink their columns - they scroll
+           horizontally inside their card instead, which keeps every
+           column readable rather than crushing text. */
+        .card {
+          padding: 14px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        table {
+          min-width: 560px; /* forces horizontal scroll instead of squashing columns unreadably */
+        }
+
+        /* Buttons and form inputs grow to at least 44px tall - the
+           minimum touch-target size recommended by both Apple's and
+           Google's mobile accessibility guidelines, so nothing on a
+           clinic tablet or phone requires a precise tap to hit. */
+        .btn, .btn-full, .btn-primary, .btn-secondary {
+          min-height: 44px;
+          padding: 10px 16px;
+        }
+        input, select, .form-row input, .form-row select {
+          min-height: 44px;
+          font-size: 16px; /* 16px prevents iOS Safari from auto-zooming into the field on focus */
+        }
+        .nav-link {
+          min-height: 48px;
+        }
+
+        /* Login card fills more of the screen width instead of floating
+           small in the middle, and the two-column patient/service info
+           grids used across Profile/Revenue pages stack to one column. */
+        .login-box {
+          padding: 28px 22px;
+          max-width: 92vw;
+        }
+      }
+
+      /* ---------- SMALL PHONES (≤400px) ---------- */
+      @media (max-width: 400px) {
+        .header h2 { font-size: 16px; }
+        .card { padding: 12px; }
+        table { min-width: 480px; }
+      }
     </style>
   </head>
   <body>
@@ -492,6 +621,10 @@
      MAIN APP (hidden until login succeeds)
      ============================================================ -->
     <div class="app-container" id="appContainer">
+      <!-- Tapping this closes the sidebar drawer on mobile - only visible
+           (via CSS) when body has the sidebar-open class. -->
+      <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
       <!-- ---------- SIDEBAR ---------- -->
       <aside class="sidebar">
         <div class="clinic-logo">
@@ -561,6 +694,7 @@
 
       <main class="main-content">
         <div class="header">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
           <h2 id="pageTitle">Dashboard</h2>
           <div class="user-badge">
             <div class="user-avatar" id="userInitial">S</div>
@@ -3689,7 +3823,18 @@
         document.querySelectorAll('.nav-link').forEach(function (link) {
           link.addEventListener('click', function () {
             showPage(link.getAttribute('data-page'));
+            document.body.classList.remove('sidebar-open'); // close mobile drawer after navigating
           });
+        });
+
+        // Mobile hamburger menu: opens the sidebar as a slide-in drawer.
+        // Tapping the backdrop behind it closes it again - both just
+        // toggle one class on <body>, which the CSS media query reads.
+        document.getElementById('mobileMenuBtn').addEventListener('click', function () {
+          document.body.classList.add('sidebar-open');
+        });
+        document.getElementById('sidebarBackdrop').addEventListener('click', function () {
+          document.body.classList.remove('sidebar-open');
         });
 
         // Patients page
