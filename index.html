@@ -437,6 +437,53 @@
         font-family: monospace;
       }
 
+      /* ---------- PERSON AVATARS (patients, staff, doctors) ----------
+         A small colored circle with initials, used anywhere a person's
+         name appears in a table. Color is picked deterministically from
+         the name itself (see nameToAvatarColor() in JS) so the same
+         person always gets the same color across the whole app, without
+         needing to store a color choice anywhere. */
+      .person-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .person-avatar {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+      /* Doctor avatars get a distinct ring - a quick visual cue in any
+         list mixing roles (e.g. Staff Management) that this person is
+         clinical staff, without needing to read the role column. */
+      .person-avatar.is-doctor {
+        box-shadow: 0 0 0 2px var(--card-bg), 0 0 0 4px var(--primary);
+      }
+
+      /* ---------- ROLE / STATUS BADGES ---------- */
+      .role-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .role-badge.role-doctor      { background: #dbeafe; color: #1e40af; }
+      .role-badge.role-nurse       { background: #fce7f3; color: #9d174d; }
+      .role-badge.role-receptionist{ background: #fef3c7; color: #92400e; }
+      .role-badge.role-assistant   { background: #ede9fe; color: #5b21b6; }
+      .role-badge.role-manager     { background: #dcfce7; color: #166534; }
+
       .btn {
         display: inline-flex;
         align-items: center;
@@ -967,8 +1014,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Patient ID</th>
-                    <th>Full Name</th>
+                    <th>Patient</th>
                     <th>Phone</th>
                     <th>Age</th>
                     <th>Gender</th>
@@ -978,7 +1024,7 @@
                 </thead>
                 <tbody id="patientsList">
                   <tr>
-                    <td colspan="7" class="empty-state">Loading patients...</td>
+                    <td colspan="6" class="empty-state">Loading patients...</td>
                   </tr>
                 </tbody>
               </table>
@@ -2230,7 +2276,7 @@
           roleSelectHtml += '</select>';
 
           html += '<tr>';
-          html += '<td style="font-weight:500;">' + s.full_name + '</td>';
+          html += '<td>' + buildPersonCell(s.full_name, s.role === 'Doctor', '') + '</td>';
           html += '<td>' + roleSelectHtml + '</td>';
           html += '<td></td>';
           html += '</tr>';
@@ -2622,14 +2668,13 @@
       function renderPatientsTable(list) {
         const tbody = document.getElementById('patientsList');
         if (list.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No patients found</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No patients found</td></tr>';
           return;
         }
         let html = '';
         for (const p of list) {
           html += '<tr class="patient-row" data-patient-id="' + p.id + '" style="cursor:pointer;">';
-          html += '<td><span class="patient-code-badge">' + p.patient_code + '</span></td>';
-          html += '<td style="font-weight:500;">' + p.full_name + '</td>';
+          html += '<td>' + buildPersonCell(p.full_name, false, '<span class="patient-code-badge" style="margin-top:2px; display:inline-block;">' + p.patient_code + '</span>') + '</td>';
           html += '<td>' + (p.phone || 'N/A') + '</td>';
           html += '<td>' + (p.age != null ? p.age : 'N/A') + '</td>';
           html += '<td>' + (p.gender || 'N/A') + '</td>';
@@ -3435,6 +3480,58 @@
       }
 
       /* ============================================================
+         PERSON AVATAR + ROLE BADGE HELPERS
+         Used anywhere a patient, staff member, or doctor's name appears
+         in a table row - keeps the "colored initials circle" look
+         consistent across Patients, Staff Management, and the Queue.
+         ============================================================ */
+
+      // A small, fixed palette of muted, professional colors - not neon,
+      // not pastel-cute, matching the clinic's teal theme family. The
+      // same name always maps to the same color (simple character-sum
+      // hash), so a doctor's avatar color stays consistent everywhere
+      // they appear without storing a color choice in the database.
+      const AVATAR_COLORS = ['#0d9488', '#0e7490', '#4338ca', '#7c3aed', '#be185d', '#b45309', '#15803d'];
+
+      function nameToAvatarColor(name) {
+        if (!name) return AVATAR_COLORS[0];
+        let sum = 0;
+        for (let i = 0; i < name.length; i++) { sum += name.charCodeAt(i); }
+        return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+      }
+
+      function initialsFromName(name) {
+        if (!name) return '?';
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+      }
+
+      // Builds the full "avatar circle + name" markup used in table cells.
+      // isDoctor adds the ring highlight; subtitle is optional smaller
+      // text under the name (e.g. patient code, or a role badge).
+      function buildPersonCell(name, isDoctor, subtitleHtml) {
+        const color = nameToAvatarColor(name);
+        const doctorClass = isDoctor ? ' is-doctor' : '';
+        let html = '<div class="person-row">';
+        html += '<div class="person-avatar' + doctorClass + '" style="background:' + color + ';">' + initialsFromName(name) + '</div>';
+        html += '<div><div style="font-weight:600;">' + name + '</div>';
+        if (subtitleHtml) { html += subtitleHtml; }
+        html += '</div></div>';
+        return html;
+      }
+
+      function roleBadgeHtml(role) {
+        const roleClassMap = {
+          'Doctor': 'role-doctor', 'Nurse': 'role-nurse',
+          'Receptionist': 'role-receptionist', 'Assistant': 'role-assistant',
+          'Manager': 'role-manager'
+        };
+        const cls = roleClassMap[role] || 'role-assistant';
+        return '<span class="role-badge ' + cls + '">' + (role || 'Staff') + '</span>';
+      }
+
+      /* ============================================================
          SECTION 9: APPOINTMENTS / TODAY'S QUEUE
          ============================================================ */
 
@@ -3858,8 +3955,8 @@
           html += '<tr>';
           html += '<td>' + (a.token_number != null ? a.token_number : '-') + '</td>';
           html += '<td style="font-family:monospace;">' + timeShort + '</td>';
-          html += '<td style="font-weight:500;">' + patientName + ' <span style="color:var(--text-light); font-size:12px;">(' + patientCode + ')</span></td>';
-          html += '<td>' + doctorName + '</td>';
+          html += '<td>' + buildPersonCell(patientName, false, '<span class="patient-code-badge" style="margin-top:2px; display:inline-block;">' + patientCode + '</span>') + '</td>';
+          html += '<td>' + buildPersonCell(doctorName, doctorName !== 'Unassigned', '') + '</td>';
           html += '<td>' + selectHtml + '</td>';
           html += '</tr>';
         }
